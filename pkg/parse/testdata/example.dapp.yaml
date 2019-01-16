@@ -1,0 +1,8 @@
+---
+image: stterm
+
+---
+|
+  FROM alpine
+  RUN apk add st
+  ENTRYPOINT [ "/usr/bin/st" ]
