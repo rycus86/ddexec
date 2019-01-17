@@ -9,6 +9,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
+	"github.com/docker/docker/api/types/strslice"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	ddconfig "github.com/rycus86/ddexec/pkg/config"
@@ -37,8 +38,21 @@ func Run(c *ddconfig.Configuration) int {
 
 	i, _, err := cli.ImageInspectWithRaw(context.TODO(), c.Image)
 	if err != nil {
-		panic(err) // FIXME maybe just needs to pull the image
-	}
+		if client.IsErrNotFound(err) {
+			if reader, err := cli.ImagePull(
+				context.TODO(),
+				c.Image,
+				types.ImagePullOptions{}); err != nil {
+				panic(err)
+			} else {
+				defer reader.Close()
+				ioutil.ReadAll(reader) // TODO is there anything to do with this?
+			}
+		} else {
+			panic(err)
+		}
+	} // TODO check here if we want to update the image
+
 	envPath := ""
 	for _, item := range i.Config.Env {
 		if strings.HasPrefix(item, "PATH=") {
@@ -62,17 +76,41 @@ func Run(c *ddconfig.Configuration) int {
 		env = append(env, "XAUTHORITY="+getXauth())
 	}
 
+	env = append(env, "HOME="+os.Getenv("HOME"))
+	env = append(env, "USER="+os.Getenv("USER"))
+
+	timezone := os.Getenv("TZ")
+	if timezone == "" {
+		if fi, err := os.Stat("/etc/timezone"); err == nil && !fi.IsDir() && fi.Size() > 0 {
+			if tzdata, err := ioutil.ReadFile("/etc/timezone"); err == nil {
+				timezone = strings.TrimSpace(string(tzdata))
+			}
+		}
+	}
+	if timezone != "" {
+		env = append(env, "TZ="+timezone)
+	}
+
 	mounts := []mount.Mount{
-		{
-			Type:   mount.TypeVolume,
-			Source: "Xsocket",
-			Target: "/tmp/.X11-unix",
-		},
 		{
 			Type:   mount.TypeBind,
 			Source: "/var/run/docker.sock",
 			Target: "/var/run/docker.sock",
 		},
+	}
+
+	if os.Getenv("USE_HOST_X11") != "" {
+		mounts = append(mounts, mount.Mount{
+			Type:   mount.TypeBind,
+			Source: "/tmp/.X11-unix",
+			Target: "/tmp/.X11-unix",
+		})
+	} else {
+		mounts = append(mounts, mount.Mount{
+			Type:   mount.TypeVolume,
+			Source: "Xsocket",
+			Target: "/tmp/.X11-unix",
+		})
 	}
 
 	if c.DesktopMode {
@@ -104,12 +142,28 @@ func Run(c *ddconfig.Configuration) int {
 		})
 	}
 
+	for _, vc := range c.Volumes {
+		if vc.Type == string(mount.TypeBind) {
+			if _, err := os.Stat(vc.Source); err != nil && os.IsNotExist(err) {
+				os.MkdirAll(os.ExpandEnv(vc.Source), 0777)
+			}
+		}
+
+		mounts = append(mounts, mount.Mount{
+			Type:     mount.Type(vc.Type),
+			Source:   os.ExpandEnv(vc.Source),
+			Target:   vc.Target,
+			ReadOnly: vc.ReadOnly,
+		})
+	}
+
 	created, err := cli.ContainerCreate(
 		context.TODO(), // TODO
 		&container.Config{
 			Image: c.GetImage(),
 			Env:   env,
 			User:  getUserAndGroup(),
+			Cmd:   strslice.StrSlice(c.Command),
 		},
 		&container.HostConfig{
 			AutoRemove: true,
@@ -126,8 +180,11 @@ func Run(c *ddconfig.Configuration) int {
 
 	// copy files
 	passwdFiles := prepareUserAndGroupFiles(c)
-	defer os.Remove(passwdFiles.Passwd)
-	defer os.Remove(passwdFiles.Group)
+	if passwdFiles.Temporary {
+		defer os.Remove(passwdFiles.Passwd)
+		defer os.Remove(passwdFiles.Group)
+	}
+	// always delete the made-up /etc/shadow file
 	defer os.Remove(passwdFiles.Shadow)
 
 	copyToContainer(cli, created.ID, passwdFiles.Passwd, "/etc/passwd")
@@ -290,27 +347,30 @@ func getXauth() string {
 }
 
 func prepareUserAndGroupFiles(c *ddconfig.Configuration) *files.PasswdFiles {
+	var passwd, group string
+	var temporary bool
+
 	if c.DesktopMode {
-		passwd := files.CopyToTempfile("/etc/passwd")
-		group := files.CopyToTempfile("/etc/group")
-		shadow := files.WriteToTempfile(strings.TrimSpace(fmt.Sprintf(`
+		group = files.CopyToTempfile("/etc/group")
+		passwd = files.CopyToTempfile("/etc/passwd")
+		files.ModifyFile(passwd, "(?m)^("+getUsername()+":.+:)[^:]*$", "$1/bin/sh")
+		temporary = true
+	} else {
+		passwd = "/etc/passwd"
+		group = "/etc/group"
+		temporary = false
+	}
+
+	shadow := files.WriteToTempfile(strings.TrimSpace(fmt.Sprintf(`
 %s:!::0:99999:7:::
 root:!::0:99999:7:::
 `, getUsername())))
 
-		files.ModifyFile(passwd, "(?m)^("+getUsername()+":.+:)[^:]*$", "$1/bin/sh")
-
-		return &files.PasswdFiles{
-			Passwd: passwd,
-			Group:  group,
-			Shadow: shadow,
-		}
-	} else {
-		return &files.PasswdFiles{
-			Passwd: "/etc/passwd",
-			Group:  "/etc/group",
-			Shadow: "/etc/shadow",
-		}
+	return &files.PasswdFiles{
+		Passwd:    passwd,
+		Group:     group,
+		Shadow:    shadow,
+		Temporary: temporary,
 	}
 }
 

@@ -24,5 +24,5 @@ func (c *Configuration) GetName() string {
 		return c.Name
 	}
 
-	return regexp.MustCompile("(?:.*/)?(.+)(?::.*)?").ReplaceAllString(c.GetImage(), "$1")
+	return regexp.MustCompile("(?:.*/)?(.+?)(?::.*)?").ReplaceAllString(c.GetImage(), "$1")
 }
