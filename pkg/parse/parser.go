@@ -4,7 +4,6 @@ import (
 	"github.com/rycus86/ddexec/pkg/config"
 	"gopkg.in/yaml.v2"
 	"os"
-	"path/filepath"
 )
 
 func ParseConfiguration(path string) *config.Configuration {
@@ -20,8 +19,6 @@ func ParseConfiguration(path string) *config.Configuration {
 	if err := decoder.Decode(c); err != nil {
 		panic(err)
 	}
-
-	c.Filename = filepath.Base(path)
 
 	var data string
 	if err := decoder.Decode(&data); err != nil {

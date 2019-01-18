@@ -1,5 +1,25 @@
 package config
 
+type StartupConfiguration struct {
+	DesktopMode       bool
+	KeepUser          bool
+	ShareX11          bool
+	ShareDBus         bool
+	ShareDockerSocket bool
+	UseHostX11        bool
+	SharedHomeDir     bool
+	SharedTools       bool
+
+	XorgLogs string
+
+	Filename string
+
+	EnvPath   string
+	ImageID   string
+	ImageUser string
+	ImageHome string
+}
+
 type Configuration struct {
 	Image      string
 	Command    []string // TODO simple string
@@ -7,9 +27,6 @@ type Configuration struct {
 	Dockerfile string
 	Privileged bool // TODO not sure if we should support this
 	Volumes    []VolumeConfig
-
-	Filename    string `yaml:"-"`
-	DesktopMode bool   `yaml:"-"`
 }
 
 type VolumeConfig struct {
