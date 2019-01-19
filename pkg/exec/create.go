@@ -17,19 +17,31 @@ func createContainer(
 	cli *client.Client, c *config.Configuration, sc *config.StartupConfiguration,
 	env []string, mounts []mount.Mount) string {
 
+	var command []string
+	if len(sc.Args) > 0 {
+		command = sc.Args
+	} else {
+		command = c.Command
+	}
+
+	var additionalGroups []string
+	if sc.ShareDockerSocket {
+		additionalGroups = append(additionalGroups, "docker")
+	}
+
 	if created, err := cli.ContainerCreate(
 		context.TODO(), // TODO
 		&container.Config{
 			Image: c.Image,
 			Env:   env,
 			User:  getUserAndGroup(),
-			Cmd:   strslice.StrSlice(c.Command),
+			Cmd:   strslice.StrSlice(command),
 		},
 		&container.HostConfig{
 			AutoRemove: true,
 			Privileged: sc.DesktopMode || c.Privileged, // TODO is this absolutely necessary for starting X ?
 			Mounts:     mounts,
-			GroupAdd:   []string{"docker"},
+			GroupAdd:   additionalGroups,
 		},
 		&network.NetworkingConfig{},
 		generateName(c),

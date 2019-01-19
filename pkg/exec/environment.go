@@ -2,6 +2,7 @@ package exec
 
 import (
 	"github.com/rycus86/ddexec/pkg/config"
+	"github.com/rycus86/ddexec/pkg/control"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 func prepareEnvironment(sc *config.StartupConfiguration) []string {
 	var env []string
 
+	env = append(env, prepareDdexecEnvironment()...)
 	env = append(env, prepareX11Environment(sc)...)
 	env = append(env, prepareTimezoneEnvironment()...)
 	env = append(env, preparePathEnvironment(sc)...)
@@ -24,6 +26,13 @@ func prepareEnvironment(sc *config.StartupConfiguration) []string {
 	}
 
 	return env
+}
+
+func prepareDdexecEnvironment() []string {
+	return []string{
+		control.EnvHome + "=" + control.GetHostHome(),
+		control.EnvServerSocket + "=" + control.GetServerSocket(),
+	}
 }
 
 func prepareX11Environment(sc *config.StartupConfiguration) []string {

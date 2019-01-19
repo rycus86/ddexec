@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"github.com/rycus86/ddexec/pkg/config"
+	"github.com/rycus86/ddexec/pkg/debug"
 	"github.com/rycus86/ddexec/pkg/exec"
 	"github.com/rycus86/ddexec/pkg/parse"
 	"os"
@@ -9,6 +11,10 @@ import (
 )
 
 func main() {
+	if debug.IsEnabled() {
+		fmt.Println("Starting...")
+	}
+
 	if len(os.Args) < 2 {
 		println(`
 Usage:
@@ -39,12 +45,20 @@ func getStartupConfiguration() *config.StartupConfiguration {
 		filename = filepath.Base(os.Args[1])
 	}
 
+	var args []string
+	if isDesktopMode() {
+		args = os.Args[3:]
+	} else {
+		args = os.Args[2:]
+	}
+
 	return &config.StartupConfiguration{
 		DesktopMode:       isDesktopMode(),
+		Args:              args,
 		ShareX11:          true,
 		ShareDBus:         true,
-		ShareDockerSocket: true, // TODO
-		SharedHomeDir:     true,
+		ShareDockerSocket: os.Getenv("DO_NOT_SHARE_DOCKER") == "", // TODO
+		SharedHomeDir:     os.Getenv("DO_NOT_SHARE_HOME") == "",
 		SharedTools:       true,
 		KeepUser:          os.Getenv("KEEP_USER") != "",
 		UseHostX11:        os.Getenv("USE_HOST_X11") != "",

@@ -2,9 +2,12 @@ package exec
 
 import (
 	"github.com/rycus86/ddexec/pkg/config"
+	"github.com/rycus86/ddexec/pkg/control"
 )
 
 func Run(c *config.Configuration, sc *config.StartupConfiguration) int {
+	control.StartServerIfNecessary()
+
 	cli := newClient()
 	defer cli.Close()
 

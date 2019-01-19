@@ -4,9 +4,11 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
+	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/rycus86/ddexec/pkg/config"
+	"github.com/rycus86/ddexec/pkg/debug"
 	"io"
 	"io/ioutil"
 	"os"
@@ -15,17 +17,19 @@ import (
 )
 
 func copyFiles(cli *client.Client, containerID string, sc *config.StartupConfiguration) {
-	passwdFiles := prepareUserAndGroupFiles(sc)
-	if passwdFiles.Temporary {
-		defer os.Remove(passwdFiles.Passwd)
-		defer os.Remove(passwdFiles.Group)
-	}
-	// always delete the made-up /etc/shadow file
-	defer os.Remove(passwdFiles.Shadow)
+	if !sc.KeepUser {
+		passwdFiles := prepareUserAndGroupFiles(sc)
+		if passwdFiles.Temporary {
+			defer os.Remove(passwdFiles.Passwd)
+			defer os.Remove(passwdFiles.Group)
+		}
+		// always delete the made-up /etc/shadow file
+		defer os.Remove(passwdFiles.Shadow)
 
-	copyToContainer(cli, containerID, passwdFiles.Passwd, "/etc/passwd")
-	copyToContainer(cli, containerID, passwdFiles.Group, "/etc/group")
-	copyToContainer(cli, containerID, passwdFiles.Shadow, "/etc/shadow")
+		copyToContainer(cli, containerID, passwdFiles.Passwd, "/etc/passwd")
+		copyToContainer(cli, containerID, passwdFiles.Group, "/etc/group")
+		copyToContainer(cli, containerID, passwdFiles.Shadow, "/etc/shadow")
+	}
 
 	copyToContainer(cli, containerID, getExecutable(), "/usr/local/bin/ddexec")
 
@@ -39,6 +43,10 @@ func copyFiles(cli *client.Client, containerID string, sc *config.StartupConfigu
 }
 
 func copyToContainer(cli *client.Client, containerId, source, target string) {
+	if debug.IsEnabled() {
+		fmt.Println("Copying", source, "to", target, "...")
+	}
+
 	tarFile, err := createTar(source, filepath.Base(target))
 	if err != nil {
 		panic(err)

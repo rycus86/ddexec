@@ -12,6 +12,7 @@ type StartupConfiguration struct {
 
 	XorgLogs string
 
+	Args     []string
 	Filename string
 
 	EnvPath   string

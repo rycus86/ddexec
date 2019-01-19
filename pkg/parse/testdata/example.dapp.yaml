@@ -1,8 +1,5 @@
----
 image: stterm
-
----
-|
+dockerfile: |
   FROM alpine
   RUN apk add st
   ENTRYPOINT [ "/usr/bin/st" ]

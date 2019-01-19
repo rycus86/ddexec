@@ -20,12 +20,5 @@ func ParseConfiguration(path string) *config.Configuration {
 		panic(err)
 	}
 
-	var data string
-	if err := decoder.Decode(&data); err != nil {
-		panic(err)
-	} else {
-		c.Dockerfile = data
-	}
-
 	return c
 }
