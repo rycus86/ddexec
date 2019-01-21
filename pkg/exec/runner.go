@@ -19,10 +19,13 @@ func Run(c *config.Configuration, sc *config.StartupConfiguration) int {
 	containerID := createContainer(cli, c, sc, env, mounts)
 	copyFiles(cli, containerID, sc)
 
+	if closeStreams := setupStreams(cli, containerID, c); closeStreams != nil {
+		defer closeStreams()
+	}
+
 	startContainer(cli, containerID)
 
 	setupSignalHandlers(cli, containerID)
-	setupStreams(cli, containerID)
 
 	return waitForExit(cli, containerID)
 }

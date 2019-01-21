@@ -11,7 +11,7 @@ func waitForExit(cli *client.Client, containerID string) int {
 	chWait, chErr := cli.ContainerWait(
 		context.Background(),
 		containerID,
-		container.WaitConditionNextExit)
+		container.WaitConditionNotRunning)
 
 	for {
 		select {

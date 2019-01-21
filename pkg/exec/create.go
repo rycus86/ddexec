@@ -25,17 +25,22 @@ func createContainer(
 	}
 
 	var additionalGroups []string
-	if sc.ShareDockerSocket {
+	if sc.ShareDockerSocket && !sc.KeepUser {
 		additionalGroups = append(additionalGroups, "docker")
 	}
 
 	if created, err := cli.ContainerCreate(
 		context.TODO(), // TODO
 		&container.Config{
-			Image: c.Image,
-			Env:   env,
-			User:  getUserAndGroup(),
-			Cmd:   strslice.StrSlice(command),
+			Image:        c.Image,
+			Env:          env,
+			User:         getUserAndGroup(),
+			Cmd:          strslice.StrSlice(command),
+			Tty:          c.Tty,
+			OpenStdin:    c.StdinOpen,
+			AttachStdin:  c.StdinOpen,
+			AttachStdout: true,
+			AttachStderr: true,
 		},
 		&container.HostConfig{
 			AutoRemove: true,

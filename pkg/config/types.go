@@ -22,12 +22,16 @@ type StartupConfiguration struct {
 }
 
 type Configuration struct {
-	Image      string
-	Command    []string // TODO simple string
-	Name       string
-	Dockerfile string
+	Name    string
+	Image   string
+	Command []string // TODO simple string
+	Volumes []VolumeConfig
+
 	Privileged bool // TODO not sure if we should support this
-	Volumes    []VolumeConfig
+	StdinOpen  bool `yaml:"stdin_open"`
+	Tty        bool
+
+	Dockerfile string
 }
 
 type VolumeConfig struct {

@@ -2,7 +2,9 @@ package exec
 
 import (
 	"context"
+	"fmt"
 	"github.com/docker/docker/client"
+	"github.com/rycus86/ddexec/pkg/debug"
 	"os"
 	"os/signal"
 	"strconv"
@@ -17,6 +19,10 @@ func setupSignalHandlers(cli *client.Client, containerID string) {
 		for {
 			select {
 			case s := <-signalChannel:
+				if debug.IsEnabled() {
+					fmt.Println("Received signal:", s)
+				}
+
 				cli.ContainerKill(context.TODO(), containerID, strconv.Itoa(int(s.(syscall.Signal))))
 			}
 		}
