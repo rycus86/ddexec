@@ -52,6 +52,14 @@ func prepareMounts(c *config.Configuration, sc *config.StartupConfiguration) []m
 		})
 	}
 
+	if sc.ShareShm {
+		mountList = append(mountList, mount.Mount{
+			Type:   mount.TypeBind,
+			Source: "/dev/shm",
+			Target: "/dev/shm",
+		})
+	}
+
 	if sc.DesktopMode {
 		mountList = append(mountList, mount.Mount{
 			Type:   mount.TypeBind,
@@ -69,7 +77,7 @@ func prepareMounts(c *config.Configuration, sc *config.StartupConfiguration) []m
 
 	}
 
-	if sc.SharedHomeDir {
+	if sc.ShareHomeDir {
 		if sc.KeepUser {
 			mountList = append(mountList, mount.Mount{
 				Type:   mount.TypeBind,
@@ -85,7 +93,7 @@ func prepareMounts(c *config.Configuration, sc *config.StartupConfiguration) []m
 		}
 	}
 
-	if sc.SharedTools {
+	if sc.ShareTools {
 		mountList = append(mountList, mount.Mount{
 			Type:   mount.TypeBind,
 			Source: control.EnsureSourceExists("${HOME}/../bin"),

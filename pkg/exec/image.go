@@ -22,6 +22,10 @@ func prepareAndProcessImage(cli *client.Client, c *config.Configuration, sc *con
 				defer reader.Close()
 				ioutil.ReadAll(reader) // TODO is there anything to do with this?
 			}
+
+			if image, _, err = cli.ImageInspectWithRaw(context.TODO(), c.Image); err != nil {
+				panic(err)
+			}
 		} else {
 			panic(err)
 		}

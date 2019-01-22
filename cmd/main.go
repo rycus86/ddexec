@@ -25,7 +25,10 @@ Usage:
 		os.Exit(1)
 	}
 
-	os.Exit(exec.Run(getConfiguration(), getStartupConfiguration()))
+	conf := getConfiguration()
+	startupConf := getStartupConfiguration(conf)
+
+	os.Exit(exec.Run(conf, startupConf))
 }
 
 func getConfiguration() *config.Configuration {
@@ -39,7 +42,7 @@ func getConfiguration() *config.Configuration {
 	}
 }
 
-func getStartupConfiguration() *config.StartupConfiguration {
+func getStartupConfiguration(c *config.Configuration) *config.StartupConfiguration {
 	var filename string
 	if !isDesktopMode() {
 		filename = filepath.Base(os.Args[1])
@@ -52,19 +55,28 @@ func getStartupConfiguration() *config.StartupConfiguration {
 		args = os.Args[2:]
 	}
 
-	return &config.StartupConfiguration{
-		DesktopMode:       isDesktopMode(),
-		Args:              args,
-		ShareX11:          true,
-		ShareDBus:         true,
-		ShareDockerSocket: os.Getenv("DO_NOT_SHARE_DOCKER") == "", // TODO
-		SharedHomeDir:     os.Getenv("DO_NOT_SHARE_HOME") == "",
-		SharedTools:       true,
-		KeepUser:          os.Getenv("KEEP_USER") != "",
-		UseHostX11:        os.Getenv("USE_HOST_X11") != "",
-		XorgLogs:          "/var/tmp/ddexec-xorg-logs",
-		Filename:          filename,
+	sc := c.StartupConfiguration
+	if sc == nil {
+		sc = &config.StartupConfiguration{
+			ShareX11:          os.Getenv("DO_NOT_SHARE_X11") == "",
+			ShareDBus:         os.Getenv("DO_NOT_SHARE_DBUS") == "",
+			ShareShm:          os.Getenv("DO_NOT_SHARE_SHM") == "",
+			ShareDockerSocket: os.Getenv("DO_NOT_SHARE_DOCKER") == "",
+			ShareHomeDir:      os.Getenv("DO_NOT_SHARE_HOME") == "",
+			ShareTools:        os.Getenv("DO_NOT_SHARE_TOOLS") == "",
+			KeepUser:          os.Getenv("KEEP_USER") != "",
+			UseHostX11:        os.Getenv("USE_HOST_X11") != "",
+		}
+	} else {
+		c.StartupConfiguration = nil // null it out
 	}
+
+	sc.Filename = filename
+	sc.DesktopMode = isDesktopMode()
+	sc.Args = args
+	sc.XorgLogs = "/var/tmp/ddexec-xorg-logs"
+
+	return sc
 }
 
 func isDesktopMode() bool {

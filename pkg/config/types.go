@@ -1,24 +1,26 @@
 package config
 
 type StartupConfiguration struct {
-	DesktopMode       bool
-	KeepUser          bool
-	ShareX11          bool
-	ShareDBus         bool
-	ShareDockerSocket bool
-	UseHostX11        bool
-	SharedHomeDir     bool
-	SharedTools       bool
+	DesktopMode bool `yaml:"-"`
 
-	XorgLogs string
+	KeepUser          bool `yaml:"keep_user"`
+	UseHostX11        bool `yaml:"use_host_x11"`
+	ShareX11          bool `yaml:"share_x11"`
+	ShareDBus         bool `yaml:"share_dbus"`
+	ShareShm          bool `yaml:"share_shm"`
+	ShareDockerSocket bool `yaml:"share_docker"`
+	ShareHomeDir      bool `yaml:"share_home"`
+	ShareTools        bool `yaml:"share_tools"`
 
-	Args     []string
-	Filename string
+	XorgLogs string `yaml:"-"`
 
-	EnvPath   string
-	ImageID   string
-	ImageUser string
-	ImageHome string
+	Args     []string `yaml:"-"`
+	Filename string   `yaml:"-"`
+
+	EnvPath   string `yaml:"-"`
+	ImageID   string `yaml:"-"`
+	ImageUser string `yaml:"-"`
+	ImageHome string `yaml:"-"`
 }
 
 type Configuration struct {
@@ -27,11 +29,20 @@ type Configuration struct {
 	Command []string // TODO simple string
 	Volumes []VolumeConfig
 
-	Privileged bool // TODO not sure if we should support this
-	StdinOpen  bool `yaml:"stdin_open"`
-	Tty        bool
+	Privileged   bool // TODO not sure if we should support this
+	StdinOpen    bool `yaml:"stdin_open"`
+	Tty          bool
+	Devices      []string
+	SecurityOpts []string `yaml:"security_opt"`
+	CapAdd       []string `yaml:"cap_add"`
+	CapDrop      []string `yaml:"cap_drop"`
+	Ipc          string
+
+	MemLimit string `yaml:"mem_limit"`
 
 	Dockerfile string
+
+	StartupConfiguration *StartupConfiguration `yaml:"x-startup"`
 }
 
 type VolumeConfig struct {
