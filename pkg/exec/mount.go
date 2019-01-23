@@ -40,16 +40,29 @@ func prepareMounts(c *config.Configuration, sc *config.StartupConfiguration) []m
 	}
 
 	if sc.ShareDBus {
-		mountList = append(mountList, mount.Mount{
-			Type:   mount.TypeBind,
-			Source: "/run/dbus",
-			Target: "/run/dbus",
-		})
-		mountList = append(mountList, mount.Mount{
-			Type:   mount.TypeBind,
-			Source: "/run/user/" + strconv.Itoa(os.Getuid()),
-			Target: "/run/user/" + strconv.Itoa(os.Getuid()),
-		})
+		if sc.UseHostDBus {
+			mountList = append(mountList, mount.Mount{
+				Type:   mount.TypeBind,
+				Source: "/run/dbus",
+				Target: "/run/dbus",
+			})
+			mountList = append(mountList, mount.Mount{
+				Type:   mount.TypeBind,
+				Source: "/run/user/" + strconv.Itoa(os.Getuid()),
+				Target: "/run/user/" + strconv.Itoa(os.Getuid()),
+			})
+		} else {
+			mountList = append(mountList, mount.Mount{
+				Type:   mount.TypeVolume,
+				Source: "Xdbus",
+				Target: "/run/dbus",
+			})
+			mountList = append(mountList, mount.Mount{
+				Type:   mount.TypeVolume,
+				Source: "XdbusUser",
+				Target: "/run/user/" + strconv.Itoa(os.Getuid()),
+			})
+		}
 	}
 
 	if sc.ShareShm {
@@ -61,11 +74,13 @@ func prepareMounts(c *config.Configuration, sc *config.StartupConfiguration) []m
 	}
 
 	if sc.DesktopMode {
-		mountList = append(mountList, mount.Mount{
-			Type:   mount.TypeBind,
-			Source: "/run/udev",
-			Target: "/run/udev",
-		})
+		if udev, err := os.Stat("/run/udev"); err == nil && udev.IsDir() {
+			mountList = append(mountList, mount.Mount{
+				Type:   mount.TypeBind,
+				Source: "/run/udev",
+				Target: "/run/udev",
+			})
+		}
 
 		if sc.XorgLogs != "" {
 			mountList = append(mountList, mount.Mount{

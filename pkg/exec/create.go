@@ -46,10 +46,15 @@ func newContainerConfig(c *config.Configuration, sc *config.StartupConfiguration
 		command = c.Command
 	}
 
+	var user string
+	if !sc.KeepUser {
+		user = getUserAndGroup()
+	}
+
 	return &container.Config{
 		Image:        c.Image,
 		Env:          environment,
-		User:         getUserAndGroup(),
+		User:         user,
 		Cmd:          strslice.StrSlice(command),
 		Tty:          c.Tty,
 		OpenStdin:    c.StdinOpen,

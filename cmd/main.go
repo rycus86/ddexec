@@ -34,8 +34,10 @@ Usage:
 func getConfiguration() *config.Configuration {
 	if isDesktopMode() {
 		return &config.Configuration{
-			Image: os.Args[2],
-			Name:  "ddexec-session",
+			Image:     os.Args[2],
+			Name:      "ddexec-session",
+			StdinOpen: true,
+			Tty:       true,
 		}
 	} else {
 		return parse.ParseConfiguration(os.Args[1])
@@ -66,6 +68,7 @@ func getStartupConfiguration(c *config.Configuration) *config.StartupConfigurati
 			ShareTools:        os.Getenv("DO_NOT_SHARE_TOOLS") == "",
 			KeepUser:          os.Getenv("KEEP_USER") != "",
 			UseHostX11:        os.Getenv("USE_HOST_X11") != "",
+			UseHostDBus:       os.Getenv("USE_HOST_DBUS") != "",
 		}
 	} else {
 		c.StartupConfiguration = nil // null it out

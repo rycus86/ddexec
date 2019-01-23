@@ -6,6 +6,7 @@ type StartupConfiguration struct {
 	KeepUser          bool `yaml:"keep_user"`
 	UseHostX11        bool `yaml:"use_host_x11"`
 	ShareX11          bool `yaml:"share_x11"`
+	UseHostDBus       bool `yaml:"use_host_dbus"`
 	ShareDBus         bool `yaml:"share_dbus"`
 	ShareShm          bool `yaml:"share_shm"`
 	ShareDockerSocket bool `yaml:"share_docker"`
