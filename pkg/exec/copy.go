@@ -12,11 +12,17 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"syscall"
 )
 
+type fileToCopy struct {
+	Source string
+	Target string
+}
+
 func copyFiles(cli *client.Client, containerID string, sc *config.StartupConfiguration) {
+	var toCopy []fileToCopy
+
 	if !sc.KeepUser {
 		passwdFiles := prepareUserAndGroupFiles(sc)
 		if passwdFiles.Temporary {
@@ -26,28 +32,34 @@ func copyFiles(cli *client.Client, containerID string, sc *config.StartupConfigu
 		// always delete the made-up /etc/shadow file
 		defer os.Remove(passwdFiles.Shadow)
 
-		copyToContainer(cli, containerID, passwdFiles.Passwd, "/etc/passwd")
-		copyToContainer(cli, containerID, passwdFiles.Group, "/etc/group")
-		copyToContainer(cli, containerID, passwdFiles.Shadow, "/etc/shadow")
+		toCopy = append(toCopy, fileToCopy{Source: passwdFiles.Passwd, Target: "/etc/passwd"})
+		toCopy = append(toCopy, fileToCopy{Source: passwdFiles.Group, Target: "/etc/group"})
+		toCopy = append(toCopy, fileToCopy{Source: passwdFiles.Shadow, Target: "/etc/shadow"})
 	}
 
-	copyToContainer(cli, containerID, getExecutable(), "/usr/local/bin/ddexec")
+	if sc.ShareTools {
+		toCopy = append(toCopy, fileToCopy{Source: getExecutable(), Target: "/usr/local/bin/ddexec"})
+	}
 
 	if !sc.DesktopMode {
 		if err := prepareXauth(); err != nil {
 			panic(err)
 		}
 
-		copyToContainer(cli, containerID, getXauth(), getXauth())
+		toCopy = append(toCopy, fileToCopy{Source: getXauth(), Target: getXauth()})
 	}
+
+	copyToContainer(cli, containerID, toCopy...)
 }
 
-func copyToContainer(cli *client.Client, containerId, source, target string) {
+func copyToContainer(cli *client.Client, containerId string, files ...fileToCopy) {
 	if debug.IsEnabled() {
-		fmt.Println("Copying", source, "to", target, "...")
+		for _, file := range files {
+			fmt.Println("Copying", file.Source, "to", file.Target, "...")
+		}
 	}
 
-	tarFile, err := createTar(source, filepath.Base(target))
+	tarFile, err := createTar(files...)
 	if err != nil {
 		panic(err)
 	}
@@ -55,41 +67,45 @@ func copyToContainer(cli *client.Client, containerId, source, target string) {
 	if err := cli.CopyToContainer(
 		context.TODO(), // TODO
 		containerId,
-		filepath.Dir(target),
+		"/",
 		tarFile,
 		types.CopyToContainerOptions{}); err != nil {
 		panic(err)
 	}
 }
 
-func createTar(path, filename string) (io.Reader, error) {
+func createTar(files ...fileToCopy) (io.Reader, error) {
 	var b bytes.Buffer
 
-	fi, err := os.Stat(path)
-	if err != nil {
-		panic(err)
-	}
-
-	contents, err := ioutil.ReadFile(path)
-	if err != nil {
-		panic(err)
-	}
-
 	tw := tar.NewWriter(&b)
-	hdr := tar.Header{
-		Name: filename,
-		Mode: int64(fi.Mode().Perm()),
-		Size: fi.Size(),
-		Uid:  int(fi.Sys().(*syscall.Stat_t).Uid),
-		Gid:  int(fi.Sys().(*syscall.Stat_t).Gid),
-	}
-	if err := tw.WriteHeader(&hdr); err != nil {
-		panic(err)
+
+	for _, file := range files {
+		fi, err := os.Stat(file.Source)
+		if err != nil {
+			panic(err)
+		}
+
+		contents, err := ioutil.ReadFile(file.Source)
+		if err != nil {
+			panic(err)
+		}
+
+		hdr := tar.Header{
+			Name: file.Target,
+			Mode: int64(fi.Mode().Perm()),
+			Size: fi.Size(),
+			Uid:  int(fi.Sys().(*syscall.Stat_t).Uid),
+			Gid:  int(fi.Sys().(*syscall.Stat_t).Gid),
+		}
+		if err := tw.WriteHeader(&hdr); err != nil {
+			panic(err)
+		}
+
+		if _, err = tw.Write(contents); err != nil {
+			panic(err)
+		}
 	}
 
-	if _, err = tw.Write(contents); err != nil {
-		panic(err)
-	}
 	if err := tw.Close(); err != nil {
 		panic(err)
 	}

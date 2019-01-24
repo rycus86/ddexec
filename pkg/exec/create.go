@@ -14,7 +14,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rycus86/ddexec/pkg/config"
 	"io/ioutil"
-	"path"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -136,7 +136,7 @@ func parseSecurityOpts(securityOpts []string) ([]string, error) {
 			}
 		}
 		if con[0] == "seccomp" && con[1] != "unconfined" {
-			f, err := ioutil.ReadFile(path.Clean(con[1]))
+			f, err := ioutil.ReadFile(filepath.Clean(con[1]))
 			if err != nil {
 				return securityOpts, errors.Errorf("opening seccomp profile (%s) failed: %v", con[1], err)
 			}

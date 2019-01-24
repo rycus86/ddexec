@@ -111,7 +111,7 @@ func prepareMounts(c *config.Configuration, sc *config.StartupConfiguration) []m
 	if sc.ShareTools {
 		mountList = append(mountList, mount.Mount{
 			Type:   mount.TypeBind,
-			Source: control.EnsureSourceExists("${HOME}/../bin"),
+			Source: control.UnsafeEnsureSourceExists(control.Source("${HOME}/../bin")),
 			Target: "/usr/local/ddexec/bin",
 		})
 	}

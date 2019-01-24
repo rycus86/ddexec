@@ -6,18 +6,19 @@ import (
 	"github.com/rycus86/ddexec/pkg/config"
 	"github.com/rycus86/ddexec/pkg/debug"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
 func Source(path string) string {
-	return os.Expand(strings.Replace(path, "~", "${HOME}", 1), func(key string) string {
+	return filepath.Clean(os.Expand(strings.Replace(path, "~", "${HOME}", 1), func(key string) string {
 		switch key {
 		case "HOME":
 			return GetHostHome()
 		default:
 			return os.Getenv(key)
 		}
-	})
+	}))
 }
 
 func EnsureSourceExists(path string) string {
