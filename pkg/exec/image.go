@@ -15,7 +15,7 @@ import (
 	"strings"
 )
 
-func prepareAndProcessImage(cli *client.Client, c *config.Configuration, sc *config.StartupConfiguration) {
+func prepareAndProcessImage(cli *client.Client, c *config.AppConfiguration, sc *config.StartupConfiguration) {
 	image, _, err := cli.ImageInspectWithRaw(context.TODO(), c.Image)
 	if err != nil {
 		if client.IsErrNotFound(err) { // TODO we might want to build here
@@ -72,7 +72,7 @@ func prepareAndProcessImage(cli *client.Client, c *config.Configuration, sc *con
 	}
 }
 
-func buildImage(cli *client.Client, c *config.Configuration) {
+func buildImage(cli *client.Client, c *config.AppConfiguration) {
 	if debug.IsEnabled() {
 		fmt.Println("Building image for", c.Image, "...")
 	}
@@ -92,7 +92,7 @@ func buildImage(cli *client.Client, c *config.Configuration) {
 	}
 }
 
-func prepareBuildContext(c *config.Configuration) io.Reader {
+func prepareBuildContext(c *config.AppConfiguration) io.Reader {
 	target, err := ioutil.TempFile("", "ddexec*.Dockerfile")
 	if err != nil {
 		panic(err)

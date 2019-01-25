@@ -7,31 +7,34 @@ import (
 	"path"
 )
 
-func ParseConfiguration(path string) *config.Configuration {
+func ParseConfiguration(path string) *config.GlobalConfiguration {
 	f, err := os.Open(path)
 	if err != nil {
 		panic(err)
 	}
 	defer f.Close()
 
-	c := new(config.Configuration)
+	c := config.GlobalConfiguration{}
 	decoder := yaml.NewDecoder(f)
 
-	if err := decoder.Decode(c); err != nil {
+	if err := decoder.Decode(&c); err != nil {
 		panic(err)
 	}
 
 	replacer := &replacer{Filepath: path}
-	replacer.postProcess(c)
 
-	return c
+	for _, conf := range c {
+		replacer.postProcess(conf)
+	}
+
+	return &c
 }
 
 type replacer struct {
 	Filepath string
 }
 
-func (r *replacer) postProcess(c *config.Configuration) {
+func (r *replacer) postProcess(c *config.AppConfiguration) {
 	c.Command = r.replaceVars(c.Command)
 	c.SecurityOpts = r.replaceVars(c.SecurityOpts)
 }

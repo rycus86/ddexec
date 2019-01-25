@@ -1,8 +1,9 @@
 package config
 
-type StartupConfiguration struct {
-	DesktopMode bool `yaml:"-"`
+import "time"
 
+type StartupConfiguration struct {
+	DesktopMode       bool `yaml:"desktop_mode"`
 	KeepUser          bool `yaml:"keep_user"`
 	UseHostX11        bool `yaml:"use_host_x11"`
 	ShareX11          bool `yaml:"share_x11"`
@@ -12,11 +13,11 @@ type StartupConfiguration struct {
 	ShareDockerSocket bool `yaml:"share_docker"`
 	ShareHomeDir      bool `yaml:"share_home"`
 	ShareTools        bool `yaml:"share_tools"`
+	DaemonMode        bool `yaml:"daemon"`
 
 	XorgLogs string `yaml:"-"`
 
-	Args     []string `yaml:"-"`
-	Filename string   `yaml:"-"`
+	Args []string `yaml:"-"`
 
 	EnvPath   string `yaml:"-"`
 	ImageID   string `yaml:"-"`
@@ -24,11 +25,14 @@ type StartupConfiguration struct {
 	ImageHome string `yaml:"-"`
 }
 
-type Configuration struct {
-	Name    string
-	Image   string
-	Command []string // TODO simple string
-	Volumes []VolumeConfig
+type AppConfiguration struct {
+	Name        string
+	Image       string
+	Command     []string // TODO simple string
+	Volumes     []VolumeConfig
+	DependsOn   []string       `yaml:"depends_on"`
+	StopSignal  string         `yaml:"stop_signal"`
+	StopTimeout *time.Duration `yaml:"stop_timeout"`
 
 	Privileged   bool // TODO not sure if we should support this
 	StdinOpen    bool `yaml:"stdin_open"`
@@ -53,4 +57,10 @@ type VolumeConfig struct {
 	ReadOnly bool `yaml:"read_only"`
 
 	// TODO volume options, etc.
+}
+
+type GlobalConfiguration map[string]*AppConfiguration
+
+func (mc GlobalConfiguration) Get(name string) *AppConfiguration {
+	return mc[name]
 }

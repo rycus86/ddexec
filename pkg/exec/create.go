@@ -22,7 +22,7 @@ import (
 )
 
 func createContainer(
-	cli *client.Client, c *config.Configuration, sc *config.StartupConfiguration,
+	cli *client.Client, c *config.AppConfiguration, sc *config.StartupConfiguration,
 	env []string, mounts []mount.Mount) string {
 
 	if created, err := cli.ContainerCreate(
@@ -38,7 +38,7 @@ func createContainer(
 	}
 }
 
-func newContainerConfig(c *config.Configuration, sc *config.StartupConfiguration, environment []string) *container.Config {
+func newContainerConfig(c *config.AppConfiguration, sc *config.StartupConfiguration, environment []string) *container.Config {
 	var command []string
 	if len(sc.Args) > 0 {
 		command = sc.Args
@@ -51,6 +51,12 @@ func newContainerConfig(c *config.Configuration, sc *config.StartupConfiguration
 		user = getUserAndGroup()
 	}
 
+	var stopTimeout *int
+	if c.StopTimeout != nil {
+		stopTimeout = new(int)
+		*stopTimeout = int(c.StopTimeout.Seconds())
+	}
+
 	return &container.Config{
 		Image:        c.Image,
 		Env:          environment,
@@ -61,10 +67,12 @@ func newContainerConfig(c *config.Configuration, sc *config.StartupConfiguration
 		AttachStdin:  c.StdinOpen,
 		AttachStdout: true,
 		AttachStderr: true,
+		StopSignal:   c.StopSignal,
+		StopTimeout:  stopTimeout,
 	}
 }
 
-func newHostConfig(c *config.Configuration, sc *config.StartupConfiguration, mounts []mount.Mount) *container.HostConfig {
+func newHostConfig(c *config.AppConfiguration, sc *config.StartupConfiguration, mounts []mount.Mount) *container.HostConfig {
 	var additionalGroups []string
 	if sc.ShareDockerSocket && !sc.KeepUser {
 		additionalGroups = append(additionalGroups, "docker")
@@ -100,7 +108,7 @@ func newHostConfig(c *config.Configuration, sc *config.StartupConfiguration, mou
 
 	return &container.HostConfig{
 		AutoRemove:  true,
-		Privileged:  sc.DesktopMode || c.Privileged, // TODO is this absolutely necessary for starting X ?
+		Privileged:  c.Privileged, // TODO is this absolutely necessary for starting X ?
 		Mounts:      mounts,
 		GroupAdd:    additionalGroups,
 		SecurityOpt: securityOpts,
@@ -114,7 +122,7 @@ func newHostConfig(c *config.Configuration, sc *config.StartupConfiguration, mou
 	}
 }
 
-func generateName(c *config.Configuration) string {
+func generateName(c *config.AppConfiguration) string {
 	name := c.Name
 
 	if c.Name == "" {

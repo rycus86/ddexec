@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-func prepareMounts(c *config.Configuration, sc *config.StartupConfiguration) []mount.Mount {
+func prepareMounts(c *config.AppConfiguration, sc *config.StartupConfiguration) []mount.Mount {
 	var mountList []mount.Mount
 
 	mountList = append(mountList, mount.Mount{
@@ -31,7 +31,7 @@ func prepareMounts(c *config.Configuration, sc *config.StartupConfiguration) []m
 			Source: "/tmp/.X11-unix",
 			Target: "/tmp/.X11-unix",
 		})
-	} else if sc.DesktopMode || sc.ShareX11 {
+	} else if sc.ShareX11 {
 		mountList = append(mountList, mount.Mount{
 			Type:   mount.TypeVolume,
 			Source: "Xsocket",
