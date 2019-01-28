@@ -12,6 +12,10 @@ import (
 
 func Source(path string) string {
 	return filepath.Clean(os.Expand(strings.Replace(path, "~", "${HOME}", 1), func(key string) string {
+		if debug.IsEnabled() {
+			fmt.Println("Source: Looking for", key)
+		}
+
 		switch key {
 		case "HOME":
 			return GetHostHome()
@@ -60,6 +64,10 @@ func UnsafeEnsureSourceExists(path string) string {
 
 func Target(path string, sc *config.StartupConfiguration) string {
 	return os.Expand(strings.Replace(path, "~", "${HOME}", 1), func(key string) string {
+		if debug.IsEnabled() {
+			fmt.Println("Source: Looking for", key)
+		}
+
 		switch key {
 		case "HOME":
 			return getContainerHome(sc)

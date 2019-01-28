@@ -33,6 +33,7 @@ type AppConfiguration struct {
 	DependsOn   []string       `yaml:"depends_on"`
 	StopSignal  string         `yaml:"stop_signal"`
 	StopTimeout *time.Duration `yaml:"stop_timeout"`
+	WorkingDir  string         `yaml:"working_dir"`
 
 	Privileged   bool // TODO not sure if we should support this
 	StdinOpen    bool `yaml:"stdin_open"`

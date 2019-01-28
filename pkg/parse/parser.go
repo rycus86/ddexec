@@ -16,6 +16,7 @@ func ParseConfiguration(path string) *config.GlobalConfiguration {
 
 	c := config.GlobalConfiguration{}
 	decoder := yaml.NewDecoder(f)
+	decoder.SetStrict(true)
 
 	if err := decoder.Decode(&c); err != nil {
 		panic(err)

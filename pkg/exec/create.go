@@ -13,6 +13,7 @@ import (
 	"github.com/docker/go-units"
 	"github.com/pkg/errors"
 	"github.com/rycus86/ddexec/pkg/config"
+	"github.com/rycus86/ddexec/pkg/control"
 	"io/ioutil"
 	"path/filepath"
 	"regexp"
@@ -62,6 +63,7 @@ func newContainerConfig(c *config.AppConfiguration, sc *config.StartupConfigurat
 		Env:          environment,
 		User:         user,
 		Cmd:          strslice.StrSlice(command),
+		WorkingDir:   control.Target(c.WorkingDir, sc),
 		Tty:          c.Tty,
 		OpenStdin:    c.StdinOpen,
 		AttachStdin:  c.StdinOpen,
