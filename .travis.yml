@@ -4,7 +4,7 @@ go:
 
 script:
   - go test -v ./...
-  - CGO_ENABLED=0 go build -o ddexec-amd64 ./cmd/main.go
+  - CGO_ENABLED=0 go build -v -o ddexec-amd64 ./cmd/main.go
 
 env:
   - GO111MODULE=on
