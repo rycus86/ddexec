@@ -36,13 +36,15 @@ type AppConfiguration struct {
 	WorkingDir  string         `yaml:"working_dir"`
 
 	Privileged   bool // TODO not sure if we should support this
-	StdinOpen    bool `yaml:"stdin_open"`
+	GroupAdd     []string `yaml:"group_add"`
+	StdinOpen    bool     `yaml:"stdin_open"`
 	Tty          bool
 	Devices      []string
 	SecurityOpts []string `yaml:"security_opt"`
 	CapAdd       []string `yaml:"cap_add"`
 	CapDrop      []string `yaml:"cap_drop"`
 	Ipc          string
+	NetworkMode  string `yaml:"network_mode"`
 
 	MemLimit string `yaml:"mem_limit"`
 

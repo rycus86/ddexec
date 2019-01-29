@@ -27,6 +27,7 @@ func Run(c *config.AppConfiguration, sc *config.StartupConfiguration) (chan int,
 	startContainer(cli, containerID)
 
 	setupSignalHandlers(cli, containerID)
+	monitorTtySize(cli, containerID, c)
 
 	waitChan := make(chan int, 1)
 

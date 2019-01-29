@@ -75,9 +75,20 @@ func newContainerConfig(c *config.AppConfiguration, sc *config.StartupConfigurat
 }
 
 func newHostConfig(c *config.AppConfiguration, sc *config.StartupConfiguration, mounts []mount.Mount) *container.HostConfig {
-	var additionalGroups []string
+	additionalGroups := c.GroupAdd
+
 	if sc.ShareDockerSocket && !sc.KeepUser {
-		additionalGroups = append(additionalGroups, "docker")
+		hasDocker := false
+
+		for _, gr := range additionalGroups {
+			if gr == "docker" {
+				hasDocker = true
+			}
+		}
+
+		if !hasDocker {
+			additionalGroups = append(additionalGroups, "docker")
+		}
 	}
 
 	var devices []container.DeviceMapping
@@ -116,6 +127,7 @@ func newHostConfig(c *config.AppConfiguration, sc *config.StartupConfiguration, 
 		SecurityOpt: securityOpts,
 		CapAdd:      strslice.StrSlice(c.CapAdd),
 		CapDrop:     strslice.StrSlice(c.CapDrop),
+		NetworkMode: container.NetworkMode(c.NetworkMode), // TODO can be container:<x> or service:<x>
 		IpcMode:     container.IpcMode(c.Ipc),
 		Resources: container.Resources{
 			Devices: devices,

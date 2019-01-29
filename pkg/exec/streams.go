@@ -11,6 +11,8 @@ import (
 	"github.com/rycus86/ddexec/pkg/debug"
 	"io"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 func setupStreams(cli *client.Client, containerID string, c *config.AppConfiguration) func() {
@@ -58,4 +60,37 @@ func setupStreams(cli *client.Client, containerID string, c *config.AppConfigura
 	}()
 
 	return closerFunc
+}
+
+func monitorTtySize(cli *client.Client, containerID string, c *config.AppConfiguration) {
+	if !c.StdinOpen && !c.Tty {
+		return
+	}
+
+	fd, _ := term.GetFdInfo(os.Stdin)
+
+	resizeTty := func() {
+		ws, err := term.GetWinsize(fd)
+		if err != nil || (ws.Height == 0 && ws.Width == 0) {
+			return
+		}
+
+		options := types.ResizeOptions{
+			Height: uint(ws.Height),
+			Width:  uint(ws.Width),
+		}
+
+		cli.ContainerResize(context.TODO(), containerID, options)
+	}
+
+	resizeTty()
+
+	sigchan := make(chan os.Signal, 1)
+	signal.Notify(sigchan, syscall.SIGWINCH)
+
+	go func() {
+		for range sigchan {
+			resizeTty()
+		}
+	}()
 }
