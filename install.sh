@@ -46,7 +46,7 @@ fi
 
 ${DOWNLOAD_COMMAND} ddexec "${BINARY_URL}" &&
     ${DOWNLOAD_COMMAND} ddexec.sha256sum "${SHASUM_URL}" &&
-    cat ddexec | sha256sum -c ddexec.sha256sum &&
+    cat ddexec | sha256sum -c ddexec.sha256sum >/dev/null &&
     rm ddexec.sha256sum &&
     chmod +x ddexec ||
     {
@@ -56,11 +56,13 @@ ${DOWNLOAD_COMMAND} ddexec "${BINARY_URL}" &&
         exit 1
     }
 
+echo
 echo "./ddexec successfully downloaded"
-echo "You might want to move it to /usr/local/bin"
+echo
+echo "You might want to move it to /usr/local/bin :"
 
 if [ "$(id -u)" = "0" ]; then
-    echo "mv ddexec /usr/local/bin/"
+    echo '# mv ddexec /usr/local/bin/'
 else
-    echo "sudo mv ddexec /usr/local/bin/"
+    echo '$ sudo mv ddexec /usr/local/bin/'
 fi

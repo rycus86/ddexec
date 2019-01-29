@@ -3,9 +3,12 @@ go:
 - '1.11'
 
 script:
-  - GO111MODULE=on go test -v ./...
-  - GO111MODULE=on CGO_ENABLED=0 go build -v -o ddexec-${TRAVIS_BRANCH}.linux-amd64 ./cmd/main.go
+  - go test -v ./...
+  - CGO_ENABLED=0 go build -v -o ddexec-${TRAVIS_BRANCH}.linux-amd64 ./cmd/main.go
   - cat ddexec-${TRAVIS_BRANCH}.linux-amd64 | sha256sum - > ddexec-${TRAVIS_BRANCH}.linux-amd64.sha256sum
+
+env:
+  - GO111MODULE=on
 
 deploy:
   provider: releases
