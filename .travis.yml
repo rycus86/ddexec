@@ -6,6 +6,9 @@ script:
   - go test -v ./...
   - CGO_ENABLED=0 go build -o ddexec-amd64 ./cmd/main.go
 
+env:
+  - GO111MODULE=on
+
 deploy:
   provider: releases
   api_key:
