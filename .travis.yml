@@ -3,11 +3,9 @@ go:
 - '1.11'
 
 script:
-  - go test -v ./...
-  - CGO_ENABLED=0 go build -v -o ddexec-${TRAVIS_BRANCH}.linux-amd64 ./cmd/main.go
-
-env:
-  - GO111MODULE=on
+  - GO111MODULE=on go test -v ./...
+  - GO111MODULE=on CGO_ENABLED=0 go build -v -o ddexec-${TRAVIS_BRANCH}.linux-amd64 ./cmd/main.go
+  - cat ddexec-${TRAVIS_BRANCH}.linux-amd64 | sha256sum - > ddexec-${TRAVIS_BRANCH}.linux-amd64.sha256sum
 
 deploy:
   provider: releases
@@ -15,6 +13,7 @@ deploy:
     secure: KLwCI3YSRUnaKXYlJRHSn6YhRuFq3+GkOnTaUitjzgjocgC7ZB2o3S75nWlcKMVQ4l6ImlEjiN4B5T526HeJeVDnz8a2ZnIWHuT3EfXchJlwIF4R7+/W82PF0Te5qr/KHWqJGD9obwEh5LPpye8GcBy4S7tBlwTEFf41x7QnJ9Tq9pyJ5WAZN8SaKyfGuGQBGPYp1LVX9Gnqtiz9VMHd74pfdJScdRhze5JRpyOkYlUnxNjdd281X+m6xcHjaH527YlDJjxe6cQ5Vm0xOzceWD6DH8PzD8nphS7BpKosOkutijXETmcT3xIKjmlVM5s5byvEAU50VJFWMXJdbnkbyUtzhOXFfeqRNo/1dla93xH2XAlsgK/D2tQjXwHKbkJ5Qr8/A6DFd/u8MtOZc42A57WNhjcwvjb1w+GYSI9JQN3ugGKOeCvuDbt50jrd2ej3TqYYQiGaRvFGSqLKOFVvo/R8zNLPa9rfGpkS4RtbyLXH/DjG6EDx22GxCQzjtbpIiVSPqK0/ZLWiqfTTlDDZ/5oxaJUvdJt0PZihYGhMuurPcte0Zt5kSzKa1tKi2kCIObaFK1bYwnxo0lKC84QHAk5NmhuLMzyCtqxSeX2aqjZO4RJoHpzIf+zjtZjIl9poXsAK3ThWL4mxCw+f/32AizyUnfmGfnDtMWF+Es5LSIw=
   file:
     - ddexec-${TRAVIS_TAG}.linux-amd64
+    - ddexec-${TRAVIS_TAG}.linux-amd64.sha256sum
   skip_cleanup: true
   on:
     repo: rycus86/ddexec
