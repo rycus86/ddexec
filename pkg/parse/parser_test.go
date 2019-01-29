@@ -6,7 +6,8 @@ import (
 )
 
 func TestParseConfiguration(t *testing.T) {
-	c := ParseConfiguration("testdata/example.dapp.yaml")
+	gc := ParseConfiguration("testdata/example.dapp.yaml")
+	c := (*gc)["test"]
 
 	if c.Image != "stterm" {
 		t.Fatal("unexpected image:", c.Image)

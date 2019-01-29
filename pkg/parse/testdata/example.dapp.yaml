@@ -1,5 +1,6 @@
-image: stterm
-dockerfile: |
-  FROM alpine
-  RUN apk add st
-  ENTRYPOINT [ "/usr/bin/st" ]
+test:
+  image: stterm
+  dockerfile: |
+    FROM alpine
+    RUN apk add st
+    ENTRYPOINT [ "/usr/bin/st" ]
