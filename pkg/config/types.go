@@ -30,10 +30,13 @@ type AppConfiguration struct {
 	Image       string
 	Command     []string // TODO simple string
 	Volumes     []VolumeConfig
+	Tmpfs       []string // TODO simple string
 	DependsOn   []string       `yaml:"depends_on"`
 	StopSignal  string         `yaml:"stop_signal"`
 	StopTimeout *time.Duration `yaml:"stop_timeout"`
 	WorkingDir  string         `yaml:"working_dir"`
+	Environment []string // TODO map[string]string
+	Labels      map[string]string
 
 	Privileged   bool // TODO not sure if we should support this
 	GroupAdd     []string `yaml:"group_add"`
@@ -44,6 +47,7 @@ type AppConfiguration struct {
 	CapAdd       []string `yaml:"cap_add"`
 	CapDrop      []string `yaml:"cap_drop"`
 	Ipc          string
+	Pid          string
 	NetworkMode  string `yaml:"network_mode"`
 
 	MemLimit string `yaml:"mem_limit"`

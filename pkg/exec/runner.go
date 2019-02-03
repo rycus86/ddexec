@@ -16,7 +16,7 @@ func Run(c *config.AppConfiguration, sc *config.StartupConfiguration) (chan int,
 
 	prepareAndProcessImage(cli, c, sc)
 
-	env := prepareEnvironment(sc)
+	env := prepareEnvironment(c, sc)
 	mounts := prepareMounts(c, sc)
 
 	containerID := createContainer(cli, c, sc, env, mounts)

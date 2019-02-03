@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func prepareEnvironment(sc *config.StartupConfiguration) []string {
+func prepareEnvironment(c *config.AppConfiguration, sc *config.StartupConfiguration) []string {
 	var env []string
 
 	env = append(env, prepareDdexecEnvironment()...)
@@ -24,6 +24,8 @@ func prepareEnvironment(sc *config.StartupConfiguration) []string {
 	if sc.ShareDBus {
 		env = append(env, prepareDBusEnvironment()...)
 	}
+
+	env = append(env, c.Environment...)
 
 	return env
 }

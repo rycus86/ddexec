@@ -64,6 +64,7 @@ func newContainerConfig(c *config.AppConfiguration, sc *config.StartupConfigurat
 		User:         user,
 		Cmd:          strslice.StrSlice(command),
 		WorkingDir:   control.Target(c.WorkingDir, sc),
+		Labels:       c.Labels,
 		Tty:          c.Tty,
 		OpenStdin:    c.StdinOpen,
 		AttachStdin:  c.StdinOpen,
@@ -119,6 +120,13 @@ func newHostConfig(c *config.AppConfiguration, sc *config.StartupConfiguration, 
 		}
 	}
 
+	var tmpfs = map[string]string{}
+	if len(c.Tmpfs) > 0 {
+		for _, item := range c.Tmpfs {
+			tmpfs[item] = ""
+		}
+	}
+
 	return &container.HostConfig{
 		AutoRemove:  true,
 		Privileged:  c.Privileged, // TODO is this absolutely necessary for starting X ?
@@ -129,6 +137,8 @@ func newHostConfig(c *config.AppConfiguration, sc *config.StartupConfiguration, 
 		CapDrop:     strslice.StrSlice(c.CapDrop),
 		NetworkMode: container.NetworkMode(c.NetworkMode), // TODO can be container:<x> or service:<x>
 		IpcMode:     container.IpcMode(c.Ipc),
+		PidMode:     container.PidMode(c.Pid),
+		Tmpfs:       tmpfs,
 		Resources: container.Resources{
 			Devices: devices,
 			Memory:  memLimit,
