@@ -9,6 +9,8 @@ import (
 	"strings"
 )
 
+const DDEXEC_ENV = "DDEXEC_ENV"
+
 func prepareEnvironment(c *config.AppConfiguration, sc *config.StartupConfiguration) []string {
 	var env []string
 
@@ -32,6 +34,7 @@ func prepareEnvironment(c *config.AppConfiguration, sc *config.StartupConfigurat
 
 func prepareDdexecEnvironment() []string {
 	return []string{
+		DDEXEC_ENV + "=" + strconv.Itoa(1),
 		control.EnvHome + "=" + control.GetHostHome(),
 		control.EnvServerSocket + "=" + control.GetServerSocket(),
 	}

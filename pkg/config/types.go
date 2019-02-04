@@ -10,6 +10,7 @@ type StartupConfiguration struct {
 	UseHostDBus       bool `yaml:"use_host_dbus"`
 	ShareDBus         bool `yaml:"share_dbus"`
 	ShareShm          bool `yaml:"share_shm"`
+	ShareSound        bool `yaml:"share_sound"`
 	ShareDockerSocket bool `yaml:"share_docker"`
 	ShareHomeDir      bool `yaml:"share_home"`
 	ShareTools        bool `yaml:"share_tools"`

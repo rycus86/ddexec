@@ -129,6 +129,7 @@ func getStartupConfiguration(c *config.AppConfiguration) *config.StartupConfigur
 			ShareX11:          os.Getenv("DO_NOT_SHARE_X11") == "",
 			ShareDBus:         os.Getenv("DO_NOT_SHARE_DBUS") == "",
 			ShareShm:          os.Getenv("DO_NOT_SHARE_SHM") == "",
+			ShareSound:        os.Getenv("DO_NOT_SHARE_SOUND") == "",
 			ShareDockerSocket: os.Getenv("DO_NOT_SHARE_DOCKER") == "",
 			ShareHomeDir:      os.Getenv("DO_NOT_SHARE_HOME") == "",
 			ShareTools:        os.Getenv("DO_NOT_SHARE_TOOLS") == "",

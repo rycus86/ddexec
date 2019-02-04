@@ -72,7 +72,7 @@ func newContainerConfig(c *config.AppConfiguration, sc *config.StartupConfigurat
 		User:         user,
 		Cmd:          strslice.StrSlice(command),
 		WorkingDir:   control.Target(c.WorkingDir, sc),
-		Labels:       c.Labels,
+		Labels:       labels,
 		Tty:          c.Tty,
 		OpenStdin:    c.StdinOpen,
 		AttachStdin:  c.StdinOpen,
@@ -86,17 +86,23 @@ func newContainerConfig(c *config.AppConfiguration, sc *config.StartupConfigurat
 func newHostConfig(c *config.AppConfiguration, sc *config.StartupConfiguration, mounts []mount.Mount) *container.HostConfig {
 	additionalGroups := c.GroupAdd
 
-	if sc.ShareDockerSocket && !sc.KeepUser {
+	if !sc.KeepUser {
 		hasDocker := false
+		hasAudio := false
 
 		for _, gr := range additionalGroups {
 			if gr == "docker" {
 				hasDocker = true
+			} else if gr == "audio" {
+				hasAudio = true
 			}
 		}
 
-		if !hasDocker {
+		if sc.ShareDockerSocket && !hasDocker {
 			additionalGroups = append(additionalGroups, "docker")
+		}
+		if sc.ShareSound && !hasAudio {
+			additionalGroups = append(additionalGroups, "audio")
 		}
 	}
 
