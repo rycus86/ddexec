@@ -84,6 +84,7 @@ func buildImage(cli *client.Client, c *config.AppConfiguration) {
 			"ddexec.source.dockerfile.hash": hashDockerfile(c.Dockerfile), // TODO const label key
 		},
 		Tags: []string{c.Image}, // TODO infer image name from filename if empty?
+		Remove: true,
 	}); err != nil {
 		panic(err)
 	} else {
