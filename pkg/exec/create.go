@@ -58,6 +58,14 @@ func newContainerConfig(c *config.AppConfiguration, sc *config.StartupConfigurat
 		*stopTimeout = int(c.StopTimeout.Seconds())
 	}
 
+	var labels = map[string]string{
+		"com.github.rycus86.ddexec.name":    c.Name,
+		"com.github.rycus86.ddexec.version": config.GetVersion(),
+	}
+	for key, value := range c.Labels {
+		labels[key] = value
+	}
+
 	return &container.Config{
 		Image:        c.Image,
 		Env:          environment,
@@ -123,7 +131,11 @@ func newHostConfig(c *config.AppConfiguration, sc *config.StartupConfiguration, 
 	var tmpfs = map[string]string{}
 	if len(c.Tmpfs) > 0 {
 		for _, item := range c.Tmpfs {
-			tmpfs[item] = ""
+			if arr := strings.SplitN(item, ":", 2); len(arr) > 1 {
+				tmpfs[arr[0]] = arr[1]
+			} else {
+				tmpfs[arr[0]] = ""
+			}
 		}
 	}
 
