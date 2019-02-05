@@ -44,6 +44,7 @@ DDEXEC_TTY              Configure the terminal (tty mode)
 KEEP_USER               Keep the user in the target image (instead of injecting the host user)
 USE_HOST_X11            Use the X11 socket from the host rather than from a shared volume
 USE_HOST_DBUS           Use the DBus sockets from the host rather than from a shared volume
+USE_HOST                Use the X11 and DBus sockets from the host
 DO_NOT_SHARE_X11        Do not share the X11 socket
 DO_NOT_SHARE_DBUS       Do not share the DBus sockets
 DO_NOT_SHARE_SHM        Do not share /dev/shm
@@ -156,8 +157,8 @@ func getStartupConfiguration(c *config.AppConfiguration) *config.StartupConfigur
 			ShareHomeDir:      env.IsNotSet("DO_NOT_SHARE_HOME"),
 			ShareTools:        env.IsNotSet("DO_NOT_SHARE_TOOLS"),
 			KeepUser:          env.IsSet("KEEP_USER"),
-			UseHostX11:        env.IsSet("USE_HOST_X11"),
-			UseHostDBus:       env.IsSet("USE_HOST_DBUS"),
+			UseHostX11:        env.IsSet("USE_HOST_X11") || env.IsSet("USE_HOST"),
+			UseHostDBus:       env.IsSet("USE_HOST_DBUS") || env.IsSet("USE_HOST"),
 		}
 	} else {
 		c.StartupConfiguration = nil // null it out
