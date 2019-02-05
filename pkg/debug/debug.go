@@ -1,13 +1,9 @@
 package debug
 
-import "os"
-
-var isEnabled bool
+import (
+	"github.com/rycus86/ddexec/pkg/env"
+)
 
 func IsEnabled() bool {
-	return isEnabled || os.Getenv("DDEXEC_DEBUG") != ""
-}
-
-func SetEnabled(enabled bool) {
-	isEnabled = enabled
+	return env.IsSet("DDEXEC_DEBUG")
 }

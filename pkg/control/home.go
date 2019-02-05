@@ -2,6 +2,7 @@ package control
 
 import (
 	"github.com/rycus86/ddexec/pkg/config"
+	"github.com/rycus86/ddexec/pkg/env"
 	"os"
 	"os/user"
 )
@@ -9,7 +10,7 @@ import (
 const EnvHome = "DDEXEC_HOME"
 
 func GetHostHome() string {
-	if os.Getenv(EnvHome) != "" {
+	if env.IsSet(EnvHome) {
 		return os.Getenv(EnvHome)
 	} else {
 		return os.ExpandEnv("${HOME}/.ddexec/home")

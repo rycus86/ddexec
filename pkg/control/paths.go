@@ -5,6 +5,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rycus86/ddexec/pkg/config"
 	"github.com/rycus86/ddexec/pkg/debug"
+	"github.com/rycus86/ddexec/pkg/env"
 	"os"
 	"path/filepath"
 	"strings"
@@ -35,7 +36,7 @@ func EnsureSourceExists(path string) string {
 }
 
 func UnsafeEnsureSourceExists(path string) string {
-	if os.Getenv(EnvServerSocket) != "" {
+	if env.IsSet(EnvServerSocket) {
 		if debug.IsEnabled() {
 			fmt.Println("Asking control to create", path, "...")
 		}

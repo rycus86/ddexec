@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"github.com/rycus86/ddexec/pkg/debug"
+	"github.com/rycus86/ddexec/pkg/env"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -32,7 +33,7 @@ func GetDirectoryToShare() string {
 }
 
 func StartServerIfNecessary() {
-	if os.Getenv(EnvServerSocket) != "" {
+	if env.IsSet(EnvServerSocket) {
 		return
 	}
 

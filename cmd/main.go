@@ -5,33 +5,50 @@ import (
 	"github.com/rycus86/ddexec/pkg/config"
 	"github.com/rycus86/ddexec/pkg/control"
 	"github.com/rycus86/ddexec/pkg/debug"
+	"github.com/rycus86/ddexec/pkg/env"
 	"github.com/rycus86/ddexec/pkg/exec"
 	"github.com/rycus86/ddexec/pkg/parse"
-	flag "github.com/spf13/pflag"
 	"os"
 )
 
-var (
-	desktopMode = flag.Bool("desktop", false, "Run the application(s) in desktop mode")
-	interactive = flag.BoolP("interactive", "i", false, "Keep STDIN open even if not attached")
-	ttyMode     = flag.BoolP("tty", "t", false, "Allocate a pseudo-TTY")
-	hostMode    = flag.Bool("host", false, "Use X11 and DBus from the host")
-	keepUser    = flag.Bool("keep-user", false, "Keep the user in the target image")
-	debugMode   = flag.Bool("debug", false, "Run in debug mode")
-)
-
 func main() {
-	flag.Parse()
+	checkArgs()
+	os.Exit(runMain())
+}
 
-	if flag.NArg() < 1 {
-		fmt.Println("Need one non-flag argument with the configuration file")
-		flag.Usage()
+func checkArgs() {
+	if debug.IsEnabled() {
+		fmt.Println("Args:", os.Args)
+	}
+
+	if len(os.Args) < 2 {
+		fmt.Println("Error: Expected a configuration file as the first parameter.")
+		fmt.Println("Use `-h` or `--help` for options")
 		os.Exit(1)
 	}
 
-	debug.SetEnabled(*debugMode)
+	if os.Args[1] == "-h" || os.Args[1] == "--help" {
+		fmt.Println(`Usage: ./ddexec <config.yml>
 
-	os.Exit(runMain())
+Environment variables supported:
+
+DDEXEC_DEBUG            Print debug messages
+DDEXEC_DESKTOP_MODE     Assume launching a new X desktop manager (shares udev)
+DDEXEC_INTERACTIVE      Attach stdin for interactive sessions
+DDEXEC_TTY              Configure the terminal (tty mode)
+KEEP_USER               Keep the user in the target image (instead of injecting the host user)
+USE_HOST_X11            Use the X11 socket from the host rather than from a shared volume
+USE_HOST_DBUS           Use the DBus sockets from the host rather than from a shared volume
+DO_NOT_SHARE_X11        Do not share the X11 socket
+DO_NOT_SHARE_DBUS       Do not share the DBus sockets
+DO_NOT_SHARE_SHM        Do not share /dev/shm
+DO_NOT_SHARE_SOUND      Do not share /dev/snd
+DO_NOT_SHARE_DOCKER     Do not share the Docker Engine API socket
+DO_NOT_SHARE_HOME       Do not share a common HOME folder with the application
+DO_NOT_SHARE_TOOLS      Do not share the ddexec tools with the application`)
+
+		os.Exit(0)
+	}
 }
 
 func runMain() int {
@@ -56,7 +73,7 @@ func runMain() int {
 		}
 	}()
 
-	globalConfig := parse.ParseConfiguration(flag.Arg(0))
+	globalConfig := parse.ParseConfiguration(os.Args[1])
 
 	var exitCode int
 
@@ -111,37 +128,37 @@ func prepareConfiguration(name string, c *config.AppConfiguration) {
 		c.Name = name
 	}
 
-	if *interactive {
+	if env.IsSet("DDEXEC_INTERACTIVE") {
 		c.StdinOpen = true
 	}
 
-	if *ttyMode {
+	if env.IsSet("DDEXEC_TTY") {
 		c.Tty = true
 	}
 }
 
 func getStartupConfiguration(c *config.AppConfiguration) *config.StartupConfiguration {
-	args := flag.Args()[1:]
+	args := os.Args[2:]
 
 	sc := c.StartupConfiguration
 	if sc == nil {
 		sc = &config.StartupConfiguration{
-			ShareX11:          os.Getenv("DO_NOT_SHARE_X11") == "",
-			ShareDBus:         os.Getenv("DO_NOT_SHARE_DBUS") == "",
-			ShareShm:          os.Getenv("DO_NOT_SHARE_SHM") == "",
-			ShareSound:        os.Getenv("DO_NOT_SHARE_SOUND") == "",
-			ShareDockerSocket: os.Getenv("DO_NOT_SHARE_DOCKER") == "",
-			ShareHomeDir:      os.Getenv("DO_NOT_SHARE_HOME") == "",
-			ShareTools:        os.Getenv("DO_NOT_SHARE_TOOLS") == "",
-			KeepUser:          *keepUser,
-			UseHostX11:        *hostMode,
-			UseHostDBus:       *hostMode,
+			ShareX11:          env.IsNotSet("DO_NOT_SHARE_X11"),
+			ShareDBus:         env.IsNotSet("DO_NOT_SHARE_DBUS"),
+			ShareShm:          env.IsNotSet("DO_NOT_SHARE_SHM"),
+			ShareSound:        env.IsNotSet("DO_NOT_SHARE_SOUND"),
+			ShareDockerSocket: env.IsNotSet("DO_NOT_SHARE_DOCKER"),
+			ShareHomeDir:      env.IsNotSet("DO_NOT_SHARE_HOME"),
+			ShareTools:        env.IsNotSet("DO_NOT_SHARE_TOOLS"),
+			KeepUser:          env.IsSet("KEEP_USER"),
+			UseHostX11:        env.IsSet("USE_HOST_X11"),
+			UseHostDBus:       env.IsSet("USE_HOST_DBUS"),
 		}
 	} else {
 		c.StartupConfiguration = nil // null it out
 	}
 
-	sc.DesktopMode = sc.DesktopMode || *desktopMode
+	sc.DesktopMode = sc.DesktopMode || env.IsSet("DDEXEC_DESKTOP_MODE")
 	sc.Args = args
 	sc.XorgLogs = "/var/tmp/ddexec-xorg-logs"
 

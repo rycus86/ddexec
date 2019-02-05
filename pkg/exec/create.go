@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rycus86/ddexec/pkg/config"
 	"github.com/rycus86/ddexec/pkg/control"
+	"github.com/rycus86/ddexec/pkg/debug"
 	"io/ioutil"
 	"path/filepath"
 	"regexp"
@@ -66,6 +67,10 @@ func newContainerConfig(c *config.AppConfiguration, sc *config.StartupConfigurat
 		labels[key] = value
 	}
 
+	if debug.IsEnabled() && len(c.Command) > 0 {
+		fmt.Println("Running with command:", c.Command)
+	}
+
 	return &container.Config{
 		Image:        c.Image,
 		Env:          environment,
@@ -107,11 +112,23 @@ func newHostConfig(c *config.AppConfiguration, sc *config.StartupConfiguration, 
 	}
 
 	var devices []container.DeviceMapping
+	var hasDevSnd = false
 	for _, device := range c.Devices {
 		// TODO parse this properly
 		devices = append(devices, container.DeviceMapping{
 			PathOnHost:        device,
 			PathInContainer:   device,
+			CgroupPermissions: "rwm",
+		})
+
+		if device == "/dev/snd" {
+			hasDevSnd = true
+		}
+	}
+	if sc.ShareSound && !hasDevSnd {
+		devices = append(devices, container.DeviceMapping{
+			PathOnHost:        "/dev/snd",
+			PathInContainer:   "/dev/snd",
 			CgroupPermissions: "rwm",
 		})
 	}
