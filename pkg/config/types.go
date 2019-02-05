@@ -29,14 +29,14 @@ type StartupConfiguration struct {
 type AppConfiguration struct {
 	Name        string
 	Image       string
-	Command     interface{} // TODO simple string
+	Command     interface{}
 	Volumes     []VolumeConfig
-	Tmpfs       []string       // TODO simple string
+	Tmpfs       interface{}
 	DependsOn   []string       `yaml:"depends_on"`
 	StopSignal  string         `yaml:"stop_signal"`
 	StopTimeout *time.Duration `yaml:"stop_timeout"`
 	WorkingDir  string         `yaml:"working_dir"`
-	Environment []string       // TODO map[string]string
+	Environment interface{}
 	Labels      map[string]string
 
 	Privileged   bool     // TODO not sure if we should support this

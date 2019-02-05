@@ -154,8 +154,9 @@ func newHostConfig(c *config.AppConfiguration, sc *config.StartupConfiguration, 
 	}
 
 	var tmpfs = map[string]string{}
-	if len(c.Tmpfs) > 0 {
-		for _, item := range c.Tmpfs {
+	var tmpfsConfig = convert.ToStringSlice(c.Tmpfs)
+	if len(tmpfsConfig) > 0 {
+		for _, item := range tmpfsConfig {
 			if arr := strings.SplitN(item, ":", 2); len(arr) > 1 {
 				tmpfs[arr[0]] = arr[1]
 			} else {

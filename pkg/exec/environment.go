@@ -3,6 +3,7 @@ package exec
 import (
 	"github.com/rycus86/ddexec/pkg/config"
 	"github.com/rycus86/ddexec/pkg/control"
+	"github.com/rycus86/ddexec/pkg/convert"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -27,7 +28,7 @@ func prepareEnvironment(c *config.AppConfiguration, sc *config.StartupConfigurat
 		env = append(env, prepareDBusEnvironment()...)
 	}
 
-	env = append(env, c.Environment...)
+	env = append(env, convert.ToStringSlice(c.Environment)...)
 
 	return env
 }
