@@ -2,6 +2,7 @@ language: go
 go:
 - '1.11'
 
+install: skip
 script:
   - sed -i "s/const VERSION = .*/const VERSION = \"${TRAVIS_BRANCH}\"/" pkg/config/version.go
   - go test -v ./...

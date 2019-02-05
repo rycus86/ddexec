@@ -27,6 +27,11 @@ func checkArgs() {
 		os.Exit(1)
 	}
 
+	if os.Args[1] == "-v" || os.Args[1] == "--version" {
+		fmt.Println("ddexec version", config.GetVersion(), "( https://github.com/rycus86/ddexec )")
+		os.Exit(0)
+	}
+
 	if os.Args[1] == "-h" || os.Args[1] == "--help" {
 		fmt.Println(`Usage: ./ddexec <config.yml>
 
