@@ -1,9 +1,11 @@
 package exec
 
 import (
+	"fmt"
 	"github.com/rycus86/ddexec/pkg/config"
 	"github.com/rycus86/ddexec/pkg/control"
 	"github.com/rycus86/ddexec/pkg/convert"
+	"github.com/rycus86/ddexec/pkg/debug"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -29,6 +31,12 @@ func prepareEnvironment(c *config.AppConfiguration, sc *config.StartupConfigurat
 	}
 
 	env = append(env, convert.ToStringSlice(c.Environment)...)
+
+	if debug.IsEnabled() {
+		for _, e := range env {
+			fmt.Println("env:", e)
+		}
+	}
 
 	return env
 }

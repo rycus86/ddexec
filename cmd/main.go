@@ -49,6 +49,7 @@ DO_NOT_SHARE_X11        Do not share the X11 socket
 DO_NOT_SHARE_DBUS       Do not share the DBus sockets
 DO_NOT_SHARE_SHM        Do not share /dev/shm
 DO_NOT_SHARE_SOUND      Do not share /dev/snd
+DO_NOT_SHARE_VIDEO      Do not share /dev/dri and /dev/video0
 DO_NOT_SHARE_DOCKER     Do not share the Docker Engine API socket
 DO_NOT_SHARE_HOME       Do not share a common HOME folder with the application
 DO_NOT_SHARE_TOOLS      Do not share the ddexec tools with the application`)
@@ -153,18 +154,19 @@ func getStartupConfiguration(c *config.AppConfiguration) *config.StartupConfigur
 			ShareDBus:         env.IsNotSet("DO_NOT_SHARE_DBUS"),
 			ShareShm:          env.IsNotSet("DO_NOT_SHARE_SHM"),
 			ShareSound:        env.IsNotSet("DO_NOT_SHARE_SOUND"),
+			ShareVideo:        env.IsNotSet("DO_NOT_SHARE_VIDEO"),
 			ShareDockerSocket: env.IsNotSet("DO_NOT_SHARE_DOCKER"),
 			ShareHomeDir:      env.IsNotSet("DO_NOT_SHARE_HOME"),
 			ShareTools:        env.IsNotSet("DO_NOT_SHARE_TOOLS"),
-			KeepUser:          env.IsSet("KEEP_USER"),
-			UseHostX11:        env.IsSet("USE_HOST_X11") || env.IsSet("USE_HOST"),
-			UseHostDBus:       env.IsSet("USE_HOST_DBUS") || env.IsSet("USE_HOST"),
 		}
 	} else {
 		c.StartupConfiguration = nil // null it out
 	}
 
 	sc.DesktopMode = sc.DesktopMode || env.IsSet("DDEXEC_DESKTOP_MODE")
+	sc.KeepUser = sc.KeepUser || env.IsSet("KEEP_USER")
+	sc.UseHostX11 = sc.UseHostX11 || env.IsSet("USE_HOST_X11") || env.IsSet("USE_HOST")
+	sc.UseHostDBus = sc.UseHostDBus || env.IsSet("USE_HOST_DBUS") || env.IsSet("USE_HOST")
 	sc.Args = args
 	sc.XorgLogs = "/var/tmp/ddexec-xorg-logs"
 

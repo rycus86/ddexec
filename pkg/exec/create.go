@@ -96,12 +96,15 @@ func newHostConfig(c *config.AppConfiguration, sc *config.StartupConfiguration, 
 	if !sc.KeepUser {
 		hasDocker := false
 		hasAudio := false
+		hasVideo := false
 
 		for _, gr := range additionalGroups {
 			if gr == "docker" {
 				hasDocker = true
 			} else if gr == "audio" {
 				hasAudio = true
+			} else if gr == "video" {
+				hasVideo = true
 			}
 		}
 
@@ -111,10 +114,13 @@ func newHostConfig(c *config.AppConfiguration, sc *config.StartupConfiguration, 
 		if sc.ShareSound && !hasAudio {
 			additionalGroups = append(additionalGroups, "audio")
 		}
+		if sc.ShareVideo && !hasVideo {
+			additionalGroups = append(additionalGroups, "video")
+		}
 	}
 
 	var devices []container.DeviceMapping
-	var hasDevSnd = false
+	var existingDevices = map[string]bool{}
 	for _, device := range c.Devices {
 		// TODO parse this properly
 		devices = append(devices, container.DeviceMapping{
@@ -123,14 +129,26 @@ func newHostConfig(c *config.AppConfiguration, sc *config.StartupConfiguration, 
 			CgroupPermissions: "rwm",
 		})
 
-		if device == "/dev/snd" {
-			hasDevSnd = true
-		}
+		existingDevices[device] = true
 	}
-	if sc.ShareSound && !hasDevSnd {
+	if sc.ShareSound && !existingDevices["/dev/snd"] {
 		devices = append(devices, container.DeviceMapping{
 			PathOnHost:        "/dev/snd",
 			PathInContainer:   "/dev/snd",
+			CgroupPermissions: "rwm",
+		})
+	}
+	if sc.ShareVideo && !existingDevices["/dev/dri"] {
+		devices = append(devices, container.DeviceMapping{
+			PathOnHost:        "/dev/dri",
+			PathInContainer:   "/dev/dri",
+			CgroupPermissions: "rwm",
+		})
+	}
+	if sc.ShareVideo && !existingDevices["/dev/video0"] {
+		devices = append(devices, container.DeviceMapping{
+			PathOnHost:        "/dev/video0",
+			PathInContainer:   "/dev/video0",
 			CgroupPermissions: "rwm",
 		})
 	}

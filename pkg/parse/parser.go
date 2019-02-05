@@ -37,8 +37,14 @@ type replacer struct {
 }
 
 func (r *replacer) postProcess(c *config.AppConfiguration) {
+	c.Image = r.replaceVar(c.Image)
 	c.Command = r.replaceVars(convert.ToStringSlice(c.Command))
+	c.Environment = r.replaceVars(convert.ToStringSlice(c.Environment))
 	c.SecurityOpts = r.replaceVars(c.SecurityOpts)
+}
+
+func (r *replacer) replaceVar(source string) string {
+	return os.Expand(source, r.variableMapper)
 }
 
 func (r *replacer) replaceVars(source []string) []string {

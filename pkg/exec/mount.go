@@ -1,9 +1,11 @@
 package exec
 
 import (
+	"fmt"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/rycus86/ddexec/pkg/config"
 	"github.com/rycus86/ddexec/pkg/control"
+	"github.com/rycus86/ddexec/pkg/debug"
 	"os"
 	"strconv"
 )
@@ -127,6 +129,12 @@ func prepareMounts(c *config.AppConfiguration, sc *config.StartupConfiguration) 
 			Target:   control.Target(vc.Target, sc),
 			ReadOnly: vc.ReadOnly,
 		})
+	}
+
+	if debug.IsEnabled() {
+		for _, m := range mountList {
+			fmt.Printf("mount: %+v\n", m)
+		}
 	}
 
 	return mountList
