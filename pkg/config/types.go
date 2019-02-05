@@ -29,7 +29,7 @@ type StartupConfiguration struct {
 type AppConfiguration struct {
 	Name        string
 	Image       string
-	Command     []string // TODO simple string
+	Command     interface{} // TODO simple string
 	Volumes     []VolumeConfig
 	Tmpfs       []string       // TODO simple string
 	DependsOn   []string       `yaml:"depends_on"`

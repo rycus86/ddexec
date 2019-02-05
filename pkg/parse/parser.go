@@ -2,6 +2,7 @@ package parse
 
 import (
 	"github.com/rycus86/ddexec/pkg/config"
+	"github.com/rycus86/ddexec/pkg/convert"
 	"gopkg.in/yaml.v2"
 	"os"
 	"path"
@@ -36,7 +37,7 @@ type replacer struct {
 }
 
 func (r *replacer) postProcess(c *config.AppConfiguration) {
-	c.Command = r.replaceVars(c.Command)
+	c.Command = r.replaceVars(convert.ToStringSlice(c.Command))
 	c.SecurityOpts = r.replaceVars(c.SecurityOpts)
 }
 

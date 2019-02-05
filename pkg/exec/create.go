@@ -11,9 +11,11 @@ import (
 	"github.com/docker/docker/api/types/strslice"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-units"
+	"github.com/mattn/go-shellwords"
 	"github.com/pkg/errors"
 	"github.com/rycus86/ddexec/pkg/config"
 	"github.com/rycus86/ddexec/pkg/control"
+	"github.com/rycus86/ddexec/pkg/convert"
 	"github.com/rycus86/ddexec/pkg/debug"
 	"io/ioutil"
 	"path/filepath"
@@ -45,7 +47,7 @@ func newContainerConfig(c *config.AppConfiguration, sc *config.StartupConfigurat
 	if len(sc.Args) > 0 {
 		command = sc.Args
 	} else {
-		command = c.Command
+		command = getCommand(c)
 	}
 
 	var user string
@@ -67,7 +69,7 @@ func newContainerConfig(c *config.AppConfiguration, sc *config.StartupConfigurat
 		labels[key] = value
 	}
 
-	if debug.IsEnabled() && len(c.Command) > 0 {
+	if debug.IsEnabled() && len(command) > 0 {
 		fmt.Println("Running with command:", c.Command)
 	}
 
@@ -189,6 +191,19 @@ func generateName(c *config.AppConfiguration) string {
 	}
 
 	return name + "-" + strconv.Itoa(int(time.Now().Unix()))
+}
+
+func getCommand(c *config.AppConfiguration) []string {
+	cmd := convert.ToStringSlice(c.Command)
+	if len(cmd) == 1 {
+		if parsed, err := shellwords.Parse(cmd[0]); err != nil {
+			panic(err)
+		} else {
+			return parsed
+		}
+	} else {
+		return cmd
+	}
 }
 
 // https://github.com/docker/cli/blob/9de1b162f/cli/command/container/opts.go#L673-L697
