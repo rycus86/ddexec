@@ -2,88 +2,91 @@ package parse
 
 import (
 	"github.com/rycus86/ddexec/pkg/config"
-	"github.com/rycus86/ddexec/pkg/convert"
 	"gopkg.in/yaml.v2"
+	"io/ioutil"
 	"os"
 	"path"
+	"regexp"
+	"strings"
 )
 
-func ParseConfiguration(path string) *config.GlobalConfiguration {
-	f, err := os.Open(path)
+// TODO other variations:
+// https://docs.docker.com/compose/compose-file/compose-file-v2/#variable-substitution
+//   ${VARIABLE:-default} evaluates to default if VARIABLE is unset or empty in the environment.
+//   ${VARIABLE-default}  evaluates to default only if VARIABLE is unset in the environment.
+//   ${VARIABLE:?err}   exits with an error message containing err if VARIABLE is unset or empty in the environment.
+//   ${VARIABLE?err}    exits with an error message containing err if VARIABLE is unset in the environment.
+var reVariableWithDefault = regexp.MustCompile("(.+):-(.*)")
+
+func ParseConfiguration(filepath string) *config.GlobalConfiguration {
+	f, err := os.Open(filepath)
 	if err != nil {
 		panic(err)
 	}
 	defer f.Close()
 
+	data, err := ioutil.ReadAll(f)
+	if err != nil {
+		panic(err)
+	}
+
+	mapper := func(key string) string {
+		switch key {
+		case "0":
+			if exec, err := os.Executable(); err == nil {
+				return exec
+			}
+
+		case "SOURCE":
+			if path.IsAbs(filepath) {
+				return filepath
+			} else if dir, err := os.Getwd(); err == nil {
+				return path.Join(dir, filepath)
+			}
+
+		case "SOURCE_DIR":
+			if path.IsAbs(filepath) {
+				return path.Dir(filepath)
+			} else if dir, err := os.Getwd(); err == nil {
+				return path.Dir(path.Join(dir, filepath))
+			}
+
+		case "PWD":
+			if dir, err := os.Getwd(); err == nil {
+				return dir
+			}
+
+		case "HOME": // TODO a bit hacky here?
+			return "${HOME}" // this is dealt with later
+
+		case "USER": // TODO a bit hacky here?
+			return "${USER}" // this is dealt with later
+
+		default:
+			if reVariableWithDefault.MatchString(key) {
+				if val := os.Getenv(reVariableWithDefault.ReplaceAllString(key, "$1")); val != "" {
+					return val
+				} else {
+					return reVariableWithDefault.ReplaceAllString(key, "$2")
+				}
+			} else {
+				return os.ExpandEnv("${" + key + "}")
+			}
+		}
+
+		return key
+	}
+
+	yamlContents := os.Expand(string(data), mapper)
+
 	c := config.GlobalConfiguration{}
-	decoder := yaml.NewDecoder(f)
+
+	decoder := yaml.NewDecoder(strings.NewReader(yamlContents))
 	decoder.SetStrict(true)
 
 	if err := decoder.Decode(&c); err != nil {
 		panic(err)
 	}
 
-	replacer := &replacer{Filepath: path}
-
-	for _, conf := range c {
-		replacer.postProcess(conf)
-	}
-
 	return &c
-}
-
-type replacer struct {
-	Filepath string
-}
-
-func (r *replacer) postProcess(c *config.AppConfiguration) {
-	c.Image = r.replaceVar(c.Image)
-	c.Command = r.replaceVars(convert.ToStringSlice(c.Command))
-	c.Environment = r.replaceVars(convert.ToStringSlice(c.Environment))
-	c.SecurityOpts = r.replaceVars(c.SecurityOpts)
-}
-
-func (r *replacer) replaceVar(source string) string {
-	return os.Expand(source, r.variableMapper)
-}
-
-func (r *replacer) replaceVars(source []string) []string {
-	var target []string
-
-	for _, item := range source {
-		target = append(target, os.Expand(item, r.variableMapper))
-	}
-
-	return target
-}
-
-func (r *replacer) variableMapper(key string) string {
-	switch key {
-	case "0":
-		if exec, err := os.Executable(); err == nil {
-			return exec
-		}
-
-	case "SOURCE":
-		if path.IsAbs(r.Filepath) {
-			return r.Filepath
-		} else if dir, err := os.Getwd(); err == nil {
-			return path.Join(dir, r.Filepath)
-		}
-
-	case "SOURCE_DIR":
-		if path.IsAbs(r.Filepath) {
-			return path.Dir(r.Filepath)
-		} else if dir, err := os.Getwd(); err == nil {
-			return path.Dir(path.Join(dir, r.Filepath))
-		}
-
-	case "PWD":
-		if dir, err := os.Getwd(); err == nil {
-			return dir
-		}
-
-	}
-
-	return key
 }
