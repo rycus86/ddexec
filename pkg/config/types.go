@@ -52,7 +52,15 @@ type AppConfiguration struct {
 	Pid          string
 	NetworkMode  string `yaml:"network_mode"`
 
-	MemLimit string `yaml:"mem_limit"`
+	MemoryLimit       string `yaml:"mem_limit"`
+	MemoryReservation string `yaml:"mem_reservation"`
+	MemorySwap        string `yaml:"memswap_limit"`
+	MemorySwappiness  *int64 `yaml:"mem_swappiness"`
+	Cpus              string `yaml:"cpus"`
+	CpuShares         int64  `yaml:"cpu_shares"`
+	CpuQuota          int64  `yaml:"cpu_quota"`
+	CpuPeriod         int64  `yaml:"cpu_period"`
+	CpusetCpus        string `yaml:"cpuset"`
 
 	Dockerfile string
 
@@ -69,7 +77,3 @@ type VolumeConfig struct {
 }
 
 type GlobalConfiguration map[string]*AppConfiguration
-
-func (mc GlobalConfiguration) Get(name string) *AppConfiguration {
-	return mc[name]
-}

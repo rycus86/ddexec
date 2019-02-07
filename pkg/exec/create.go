@@ -18,6 +18,7 @@ import (
 	"github.com/rycus86/ddexec/pkg/convert"
 	"github.com/rycus86/ddexec/pkg/debug"
 	"io/ioutil"
+	"math/big"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -162,12 +163,13 @@ func newHostConfig(c *config.AppConfiguration, sc *config.StartupConfiguration, 
 		}
 	}
 
-	var memLimit int64
-	if c.MemLimit != "" {
-		if l, err := units.RAMInBytes(c.MemLimit); err != nil {
+	unitToBytes := func(value string) int64 {
+		if value == "" {
+			return 0
+		} else if converted, err := units.RAMInBytes(value); err != nil {
 			panic(err)
 		} else {
-			memLimit = l
+			return converted
 		}
 	}
 
@@ -196,8 +198,16 @@ func newHostConfig(c *config.AppConfiguration, sc *config.StartupConfiguration, 
 		PidMode:     container.PidMode(c.Pid),
 		Tmpfs:       tmpfs,
 		Resources: container.Resources{
-			Devices: devices,
-			Memory:  memLimit,
+			Devices:           devices,
+			Memory:            unitToBytes(c.MemoryLimit),
+			MemoryReservation: unitToBytes(c.MemoryReservation),
+			MemorySwap:        unitToBytes(c.MemorySwap),
+			MemorySwappiness:  c.MemorySwappiness,
+			NanoCPUs:          parseCPUs(c.Cpus),
+			CPUShares:         c.CpuShares,
+			CPUPeriod:         c.CpuPeriod,
+			CPUQuota:          c.CpuQuota,
+			CpusetCpus:        c.CpusetCpus,
 		},
 	}
 }
@@ -223,6 +233,22 @@ func getCommand(c *config.AppConfiguration) []string {
 	} else {
 		return cmd
 	}
+}
+
+// https://github.com/docker/cli/blob/9de1b162f/opts/opts.go#L372-L383
+func parseCPUs(value string) int64 {
+	if value == "" {
+		return 0
+	}
+	cpu, ok := new(big.Rat).SetString(value)
+	if !ok {
+		panic(fmt.Errorf("cpus: failed to parse %v as a rational number", value))
+	}
+	nano := cpu.Mul(cpu, big.NewRat(1e9, 1))
+	if !nano.IsInt() {
+		panic(fmt.Errorf("cpus: value is too precise"))
+	}
+	return nano.Num().Int64()
 }
 
 // https://github.com/docker/cli/blob/9de1b162f/cli/command/container/opts.go#L673-L697
