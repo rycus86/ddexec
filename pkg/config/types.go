@@ -39,8 +39,11 @@ type AppConfiguration struct {
 	WorkingDir  string         `yaml:"working_dir"`
 	Environment interface{}
 	Labels      map[string]string
+	Ports       []string
 
-	Privileged   bool     // TODO not sure if we should support this
+	ReadOnly     bool `yaml:"read_only"`
+	Privileged   bool // TODO not sure if we should support this
+	Init         *bool
 	GroupAdd     []string `yaml:"group_add"`
 	StdinOpen    bool     `yaml:"stdin_open"`
 	Tty          bool
@@ -56,11 +59,15 @@ type AppConfiguration struct {
 	MemoryReservation string `yaml:"mem_reservation"`
 	MemorySwap        string `yaml:"memswap_limit"`
 	MemorySwappiness  *int64 `yaml:"mem_swappiness"`
+	ShmSize           string `yaml:"shm_size"`
 	Cpus              string `yaml:"cpus"`
 	CpuShares         int64  `yaml:"cpu_shares"`
 	CpuQuota          int64  `yaml:"cpu_quota"`
 	CpuPeriod         int64  `yaml:"cpu_period"`
 	CpusetCpus        string `yaml:"cpuset"`
+	OomScoreAdj       int    `yaml:"oom_score_adj"`
+	OomKillDisable    *bool  `yaml:"oom_kill_disable"`
+	PidsLimit         int64  `yaml:"pids_limit"`
 
 	Dockerfile string
 
