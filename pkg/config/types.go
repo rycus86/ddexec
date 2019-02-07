@@ -31,7 +31,7 @@ type AppConfiguration struct {
 	Name        string
 	Image       string
 	Command     interface{}
-	Volumes     []VolumeConfig
+	Volumes     []interface{}
 	Tmpfs       interface{}
 	DependsOn   []string       `yaml:"depends_on"`
 	StopSignal  string         `yaml:"stop_signal"`

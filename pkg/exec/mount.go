@@ -3,11 +3,15 @@ package exec
 import (
 	"fmt"
 	"github.com/docker/docker/api/types/mount"
+	"github.com/docker/go-units"
+	"github.com/mitchellh/mapstructure"
 	"github.com/rycus86/ddexec/pkg/config"
 	"github.com/rycus86/ddexec/pkg/control"
 	"github.com/rycus86/ddexec/pkg/debug"
+	"github.com/rycus86/ddexec/pkg/volume"
 	"os"
 	"strconv"
+	"strings"
 )
 
 func prepareMounts(c *config.AppConfiguration, sc *config.StartupConfiguration) []mount.Mount {
@@ -118,17 +122,45 @@ func prepareMounts(c *config.AppConfiguration, sc *config.StartupConfiguration) 
 		})
 	}
 
-	for _, vc := range c.Volumes {
-		if vc.Type == string(mount.TypeBind) {
-			control.EnsureSourceExists(vc.Source)
+	for _, v := range parseVolumes(c.Volumes) {
+		if v.GetMountType() == mount.TypeBind {
+			src := v.Source
+
+			v.Source = control.Source(src)
+			control.EnsureSourceExists(src)
 		}
 
-		mountList = append(mountList, mount.Mount{
-			Type:     mount.Type(vc.Type),
-			Source:   control.Source(vc.Source),
-			Target:   control.Target(vc.Target, sc),
-			ReadOnly: vc.ReadOnly,
-		})
+		mnt := mount.Mount{
+			Type:     v.GetMountType(),
+			Source:   v.Source,
+			Target:   control.Target(v.Target, sc),
+			ReadOnly: v.IsReadOnly(),
+		}
+
+		if v.Bind.Propagation != "" {
+			mnt.BindOptions = &mount.BindOptions{
+				Propagation: mount.Propagation(v.Bind.Propagation),
+			}
+		}
+
+		if v.Volume.NoCopy {
+			mnt.VolumeOptions = &mount.VolumeOptions{
+				NoCopy: true,
+			}
+		}
+
+		if v.Tmpfs.Size != "" {
+			size, err := units.FromHumanSize(v.Tmpfs.Size)
+			if err != nil {
+				panic(err)
+			}
+
+			mnt.TmpfsOptions = &mount.TmpfsOptions{
+				SizeBytes: size,
+			}
+		}
+
+		mountList = append(mountList, mnt)
 	}
 
 	if debug.IsEnabled() {
@@ -138,4 +170,44 @@ func prepareMounts(c *config.AppConfiguration, sc *config.StartupConfiguration) 
 	}
 
 	return mountList
+}
+
+func parseVolumes(vArr []interface{}) []*volume.Volume {
+	if len(vArr) == 0 {
+		return []*volume.Volume{}
+	}
+
+	converted := make([]*volume.Volume, len(vArr), len(vArr))
+
+	for idx, item := range vArr {
+		if asString, ok := item.(string); ok {
+			v := volume.Volume{}
+			parts := strings.Split(asString, ":")
+
+			switch len(parts) {
+			case 1:
+				v.Target = parts[0]
+			case 2:
+				v.Source = parts[0]
+				v.Target = parts[1]
+			case 3:
+				v.Source = parts[0]
+				v.Target = parts[1]
+				v.Mode = parts[2]
+			}
+
+			converted[idx] = &v
+		} else {
+			var v volume.Volume
+
+			err := mapstructure.Decode(item, &v)
+			if err != nil {
+				panic(err)
+			}
+
+			converted[idx] = &v
+		}
+	}
+
+	return converted
 }
