@@ -14,6 +14,8 @@ func Run(c *config.AppConfiguration, sc *config.StartupConfiguration) (chan int,
 		}
 	}()
 
+	loadDaemonCapabilities(cli, sc)
+
 	prepareAndProcessImage(cli, c, sc)
 
 	env := prepareEnvironment(c, sc)

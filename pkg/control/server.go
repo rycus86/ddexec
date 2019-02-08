@@ -1,6 +1,7 @@
 package control
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
 	"github.com/rycus86/ddexec/pkg/debug"
@@ -50,6 +51,7 @@ func StartServerIfNecessary() {
 	}
 
 	http.HandleFunc("/mkdir", handleMkdir)
+	http.HandleFunc("/checkDevice", handleCheckDevice)
 
 	go runServer(l, tmpDir)
 }
@@ -69,19 +71,21 @@ func handleMkdir(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rawPath, err := ioutil.ReadAll(r.Body)
-	if err != nil {
+	request := MakeDirectoryRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		w.WriteHeader(400)
 		return
 	}
 
-	path := Source(string(rawPath))
+	targetPath := Source(string(request.Path))
 
-	if fi, err := os.Stat(path); err == nil {
+	if fi, err := os.Stat(targetPath); err == nil {
 		if fi.IsDir() {
 			w.WriteHeader(200)
-			w.Header().Add("Content-Type", "text/plain") // TODO use JSON
-			w.Write([]byte(path))
+			w.Header().Add("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(&MakeDirectoryResponse{
+				CreatedPath: targetPath,
+			})
 		} else {
 			w.WriteHeader(409)
 		}
@@ -89,7 +93,7 @@ func handleMkdir(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if debug.IsEnabled() {
-		fmt.Println("Creating directory for child at:", path)
+		fmt.Println("Creating directory for child at:", targetPath)
 	}
 
 	defer func() {
@@ -98,9 +102,34 @@ func handleMkdir(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	created := EnsureSourceExists(path)
+	created := EnsureSourceExists(targetPath)
 
 	w.WriteHeader(200)
-	w.Header().Add("Content-Type", "text/plain") // TODO use JSON
-	w.Write([]byte(created))
+	w.Header().Add("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(&MakeDirectoryResponse{
+		CreatedPath: created,
+	})
+}
+
+func handleCheckDevice(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	if r.Method != "POST" {
+		w.WriteHeader(400)
+		return
+	}
+
+	request := CheckDeviceRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		w.WriteHeader(400)
+		return
+	}
+
+	_, err := os.Stat(request.Path)
+
+	w.WriteHeader(200)
+	w.Header().Add("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(&CheckDeviceResponse{
+		Exists: err == nil,
+	})
 }

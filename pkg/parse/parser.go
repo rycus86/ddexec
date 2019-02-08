@@ -77,6 +77,8 @@ func ParseConfiguration(filepath string) *config.GlobalConfiguration {
 		return key
 	}
 
+	// TODO maybe parse into map[?]?{} then rewrite the string fields,
+	//  then load it into the final struct with mapstructure
 	yamlContents := os.Expand(string(data), mapper)
 
 	c := config.GlobalConfiguration{}

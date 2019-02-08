@@ -11,7 +11,9 @@ import (
 	"github.com/docker/go-units"
 	"github.com/pkg/errors"
 	"github.com/rycus86/ddexec/pkg/config"
+	"github.com/rycus86/ddexec/pkg/control"
 	"github.com/rycus86/ddexec/pkg/convert"
+	"github.com/rycus86/ddexec/pkg/debug"
 	"io/ioutil"
 	"math/big"
 	"path/filepath"
@@ -50,30 +52,32 @@ func newHostConfig(c *config.AppConfiguration, sc *config.StartupConfiguration, 
 	var devices []container.DeviceMapping
 	var existingDevices = map[string]bool{}
 	for _, device := range c.Devices {
-		// TODO parse this properly
-		devices = append(devices, container.DeviceMapping{
-			PathOnHost:        device,
-			PathInContainer:   device,
-			CgroupPermissions: "rwm",
-		})
+		if deviceExists(device) {
+			// TODO parse this properly
+			devices = append(devices, container.DeviceMapping{
+				PathOnHost:        device,
+				PathInContainer:   device,
+				CgroupPermissions: "rwm",
+			})
 
-		existingDevices[device] = true
+			existingDevices[device] = true
+		}
 	}
-	if sc.ShareSound && !existingDevices["/dev/snd"] {
+	if sc.ShareSound && deviceExists("/dev/snd") && !existingDevices["/dev/snd"] {
 		devices = append(devices, container.DeviceMapping{
 			PathOnHost:        "/dev/snd",
 			PathInContainer:   "/dev/snd",
 			CgroupPermissions: "rwm",
 		})
 	}
-	if sc.ShareVideo && !existingDevices["/dev/dri"] {
+	if sc.ShareVideo && deviceExists("/dev/dri") && !existingDevices["/dev/dri"] {
 		devices = append(devices, container.DeviceMapping{
 			PathOnHost:        "/dev/dri",
 			PathInContainer:   "/dev/dri",
 			CgroupPermissions: "rwm",
 		})
 	}
-	if sc.ShareVideo && !existingDevices["/dev/video0"] {
+	if sc.ShareVideo && deviceExists("/dev/video0") && !existingDevices["/dev/video0"] {
 		devices = append(devices, container.DeviceMapping{
 			PathOnHost:        "/dev/video0",
 			PathInContainer:   "/dev/video0",
@@ -83,7 +87,9 @@ func newHostConfig(c *config.AppConfiguration, sc *config.StartupConfiguration, 
 
 	var securityOpts []string
 	if len(c.SecurityOpts) > 0 {
-		if so, err := parseSecurityOpts(c.SecurityOpts); err != nil {
+		if !sc.DaemonHasSeccompSupport {
+			fmt.Println("WARNING: No seccomp support detected")
+		} else if so, err := parseSecurityOpts(c.SecurityOpts); err != nil {
 			panic(err)
 		} else {
 			securityOpts = so
@@ -148,6 +154,17 @@ func newHostConfig(c *config.AppConfiguration, sc *config.StartupConfiguration, 
 			CPUQuota:          c.CpuQuota,
 			CpusetCpus:        c.CpusetCpus,
 		},
+	}
+}
+
+func deviceExists(path string) bool {
+	if exists, err := control.CheckDevice(path); err != nil {
+		if debug.IsEnabled() {
+			fmt.Println("Failed to check if device at", path, "exists")
+		}
+		return false
+	} else {
+		return exists
 	}
 }
 

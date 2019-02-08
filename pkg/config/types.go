@@ -25,6 +25,8 @@ type StartupConfiguration struct {
 	ImageID   string `yaml:"-"`
 	ImageUser string `yaml:"-"`
 	ImageHome string `yaml:"-"`
+
+	DaemonHasSeccompSupport bool `yaml:"-"`
 }
 
 type AppConfiguration struct {

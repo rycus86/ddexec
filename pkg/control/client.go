@@ -1,17 +1,24 @@
 package control
 
 import (
+	"bytes"
 	"context"
-	"io/ioutil"
+	"encoding/json"
 	"net"
 	"net/http"
-	"strings"
 )
 
 func MkdirAll(path string) (string, error) {
 	cli := getClient()
 
-	resp, err := cli.Post("http://control/mkdir", "text/plain", strings.NewReader(path))
+	data := new(bytes.Buffer)
+	if err := json.NewEncoder(data).Encode(MakeDirectoryRequest{
+		Path: path,
+	}); err != nil {
+		return path, err
+	}
+
+	resp, err := cli.Post("http://control/mkdir", "application/json", data)
 	if err != nil {
 		return path, err
 	}
@@ -21,12 +28,40 @@ func MkdirAll(path string) (string, error) {
 		return path, err
 	}
 
-	created, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
+	decoded := MakeDirectoryResponse{}
+	if err := json.NewDecoder(resp.Body).Decode(&decoded); err != nil {
 		return path, err
 	}
 
-	return string(created), nil
+	return decoded.CreatedPath, nil
+}
+
+func CheckDevice(path string) (bool, error) {
+	cli := getClient()
+
+	data := new(bytes.Buffer)
+	if err := json.NewEncoder(data).Encode(CheckDeviceRequest{
+		Path: path,
+	}); err != nil {
+		return false, err
+	}
+
+	resp, err := cli.Post("http://control/checkDevice", "application/json", data)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return false, err
+	}
+
+	decoded := CheckDeviceResponse{}
+	if err := json.NewDecoder(resp.Body).Decode(&decoded); err != nil {
+		return false, err
+	}
+
+	return decoded.Exists, nil
 }
 
 func getClient() *http.Client {
