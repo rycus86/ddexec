@@ -76,13 +76,4 @@ type AppConfiguration struct {
 	StartupConfiguration *StartupConfiguration `yaml:"x-startup"`
 }
 
-type VolumeConfig struct {
-	Type     string
-	Source   string
-	Target   string
-	ReadOnly bool `yaml:"read_only"`
-
-	// TODO volume options, etc.
-}
-
 type GlobalConfiguration map[string]*AppConfiguration

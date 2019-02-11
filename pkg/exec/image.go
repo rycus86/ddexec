@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"time"
 )
 
 func prepareAndProcessImage(cli *client.Client, c *config.AppConfiguration, sc *config.StartupConfiguration) {
@@ -48,7 +49,7 @@ func prepareAndProcessImage(cli *client.Client, c *config.AppConfiguration, sc *
 	if c.Dockerfile != "" {
 		hash := hashDockerfile(c.Dockerfile)
 
-		if prevHash, ok := image.Config.Labels["ddexec.source.dockerfile.hash"]; ok && hash == prevHash {
+		if prevHash, ok := image.Config.Labels["com.github.rycus86.ddexec.dockerfile.hash"]; ok && hash == prevHash {
 			// OK, we're up to date
 		} else {
 			buildImage(cli, c)
@@ -81,7 +82,8 @@ func buildImage(cli *client.Client, c *config.AppConfiguration) {
 
 	if response, err := cli.ImageBuild(context.TODO(), bctx, types.ImageBuildOptions{
 		Labels: map[string]string{
-			"ddexec.source.dockerfile.hash": hashDockerfile(c.Dockerfile), // TODO const label key
+			"com.github.rycus86.ddexec.built_at": time.Now().Format(time.RFC3339),
+			"com.github.rycus86.ddexec.dockerfile.hash": hashDockerfile(c.Dockerfile), // TODO const label key
 		},
 		Tags:   []string{c.Image}, // TODO infer image name from filename if empty?
 		Remove: true,

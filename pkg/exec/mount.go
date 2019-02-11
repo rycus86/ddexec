@@ -196,6 +196,12 @@ func parseVolumes(vArr []interface{}) []*volume.Volume {
 				v.Mode = parts[2]
 			}
 
+			if strings.HasPrefix(control.Source(v.Source), "/") {
+				v.Type = string(mount.TypeBind)
+			} else {
+				v.Type = string(mount.TypeVolume)
+			}
+
 			converted[idx] = &v
 		} else {
 			var v volume.Volume
