@@ -82,7 +82,7 @@ func buildImage(cli *client.Client, c *config.AppConfiguration) {
 
 	if response, err := cli.ImageBuild(context.TODO(), bctx, types.ImageBuildOptions{
 		Labels: map[string]string{
-			"com.github.rycus86.ddexec.built_at": time.Now().Format(time.RFC3339),
+			"com.github.rycus86.ddexec.built_at":        time.Now().Format(time.RFC3339),
 			"com.github.rycus86.ddexec.dockerfile.hash": hashDockerfile(c.Dockerfile), // TODO const label key
 		},
 		Tags:   []string{c.Image}, // TODO infer image name from filename if empty?

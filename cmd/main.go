@@ -37,7 +37,6 @@ func checkArgs() {
 
 Environment variables supported:
 
-DDEXEC_DEBUG            Print debug messages
 DDEXEC_DESKTOP_MODE     Assume launching a new X desktop manager (shares udev)
 DDEXEC_INTERACTIVE      Attach stdin for interactive sessions
 DDEXEC_TTY              Configure the terminal (tty mode)
@@ -52,10 +51,14 @@ DO_NOT_SHARE_SOUND      Do not share /dev/snd
 DO_NOT_SHARE_VIDEO      Do not share /dev/dri and /dev/video0
 DO_NOT_SHARE_DOCKER     Do not share the Docker Engine API socket
 DO_NOT_SHARE_HOME       Do not share a common HOME folder with the application
-DO_NOT_SHARE_TOOLS      Do not share the ddexec tools with the application`)
+DO_NOT_SHARE_TOOLS      Do not share the ddexec tools with the application
+DDEXEC_DEBUG            Print debug messages
+DDEXEC_TIMER            Print code execution timing information`)
 
 		os.Exit(0)
 	}
+
+	debug.LogTime("checkArgs")
 }
 
 func runMain() int {
@@ -64,6 +67,8 @@ func runMain() int {
 	}
 
 	control.StartServerIfNecessary()
+
+	debug.LogTime("controlServerStarted")
 
 	var closers []func()
 	defer func() {
@@ -81,6 +86,8 @@ func runMain() int {
 	}()
 
 	globalConfig := parse.ParseConfiguration(os.Args[1])
+
+	debug.LogTime("configParsed")
 
 	var exitCode int
 
@@ -101,7 +108,11 @@ func run(name string, configuration *config.AppConfiguration) (int, func()) {
 
 	prepareConfiguration(name, configuration)
 
+	debug.LogTime("prepareConfig")
+
 	sc := getStartupConfiguration(configuration)
+
+	debug.LogTime("startupConfig")
 
 	ch, closer := exec.Run(configuration, sc)
 

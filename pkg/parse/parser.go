@@ -1,7 +1,10 @@
 package parse
 
 import (
+	"bytes"
+	"fmt"
 	"github.com/rycus86/ddexec/pkg/config"
+	"github.com/rycus86/ddexec/pkg/debug"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
@@ -16,7 +19,30 @@ import (
 //   ${VARIABLE-default}  evaluates to default only if VARIABLE is unset in the environment.
 //   ${VARIABLE:?err}   exits with an error message containing err if VARIABLE is unset or empty in the environment.
 //   ${VARIABLE?err}    exits with an error message containing err if VARIABLE is unset in the environment.
-var reVariableWithDefault = regexp.MustCompile("(.+):-(.*)")
+var (
+	reVariableWithDefault = regexp.MustCompile("(.+):-(.*)")
+
+	variablesToKeep = []string{"USER"}                  // we'll process these later
+	nonInterpolated = []string{"volumes", "dockerfile"} // we shouldn't interpolate these (just yet)
+)
+
+func isVariableKept(v string) bool {
+	for _, x := range variablesToKeep {
+		if x == v {
+			return true
+		}
+	}
+	return false
+}
+
+func isNotInterpolated(field string) bool {
+	for _, x := range nonInterpolated {
+		if x == field {
+			return true
+		}
+	}
+	return false
+}
 
 func ParseConfiguration(filepath string) *config.GlobalConfiguration {
 	f, err := os.Open(filepath)
@@ -30,7 +56,46 @@ func ParseConfiguration(filepath string) *config.GlobalConfiguration {
 		panic(err)
 	}
 
-	mapper := func(key string) string {
+	mapper := newMapper(filepath)
+
+	var rawYaml map[interface{}]interface{}
+	if err := yaml.NewDecoder(bytes.NewReader(data)).Decode(&rawYaml); err != nil {
+		panic(err)
+	}
+
+	var processedYaml = postProcess(rawYaml, mapper)
+
+	if debug.IsEnabled() {
+		fmt.Printf("Processed YAML:\n%+v\n", processedYaml)
+	}
+
+	var (
+		yamlContents = new(bytes.Buffer)
+		encoder      = yaml.NewEncoder(yamlContents)
+	)
+	if err := encoder.Encode(processedYaml); err != nil {
+		panic(err)
+	}
+	encoder.Close()
+
+	c := config.GlobalConfiguration{}
+
+	decoder := yaml.NewDecoder(strings.NewReader(yamlContents.String()))
+	decoder.SetStrict(true)
+
+	if err := decoder.Decode(&c); err != nil {
+		panic(err)
+	}
+
+	return &c
+}
+
+func newMapper(filepath string) func(key string) string {
+	return func(key string) string {
+		if isVariableKept(key) {
+			return "${" + key + "}"
+		}
+
 		switch key {
 		case "0":
 			if exec, err := os.Executable(); err == nil {
@@ -56,12 +121,6 @@ func ParseConfiguration(filepath string) *config.GlobalConfiguration {
 				return dir
 			}
 
-		case "HOME": // TODO a bit hacky here?
-			return "${HOME}" // this is dealt with later
-
-		case "USER": // TODO a bit hacky here?
-			return "${USER}" // this is dealt with later
-
 		default:
 			if reVariableWithDefault.MatchString(key) {
 				if val := os.Getenv(reVariableWithDefault.ReplaceAllString(key, "$1")); val != "" {
@@ -76,19 +135,24 @@ func ParseConfiguration(filepath string) *config.GlobalConfiguration {
 
 		return key
 	}
+}
 
-	// TODO maybe parse into map[?]?{} then rewrite the string fields,
-	//  then load it into the final struct with mapstructure
-	yamlContents := os.Expand(string(data), mapper)
+func postProcess(v interface{}, mapping func(string) string) interface{} {
+	if m, ok := v.(map[interface{}]interface{}); ok {
+		for key, value := range m {
+			if isNotInterpolated(key.(string)) {
+				continue
+			}
 
-	c := config.GlobalConfiguration{}
-
-	decoder := yaml.NewDecoder(strings.NewReader(yamlContents))
-	decoder.SetStrict(true)
-
-	if err := decoder.Decode(&c); err != nil {
-		panic(err)
+			m[key] = postProcess(value, mapping)
+		}
+	} else if arr, ok := v.([]interface{}); ok {
+		for idx, value := range arr {
+			arr[idx] = postProcess(value, mapping)
+		}
+	} else if s, ok := v.(string); ok {
+		return os.Expand(s, mapping)
 	}
 
-	return &c
+	return v
 }

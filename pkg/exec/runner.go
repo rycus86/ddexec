@@ -3,6 +3,7 @@ package exec
 import (
 	"context"
 	"github.com/rycus86/ddexec/pkg/config"
+	"github.com/rycus86/ddexec/pkg/debug"
 )
 
 func Run(c *config.AppConfiguration, sc *config.StartupConfiguration) (chan int, func()) {
@@ -14,22 +15,47 @@ func Run(c *config.AppConfiguration, sc *config.StartupConfiguration) (chan int,
 		}
 	}()
 
+	debug.LogTime("clientReady")
+
 	loadDaemonCapabilities(cli, sc)
+
+	debug.LogTime("daemonCapabilities")
 
 	prepareAndProcessImage(cli, c, sc)
 
+	debug.LogTime("prepareImage")
+
 	env := prepareEnvironment(c, sc)
+
+	debug.LogTime("prepareEnvironment")
+
 	mounts := prepareMounts(c, sc)
 
+	debug.LogTime("prepareMounts")
+
 	containerID := createContainer(cli, c, sc, env, mounts)
+
+	debug.LogTime("createContainer")
+
 	copyFiles(cli, containerID, sc)
+
+	debug.LogTime("copyFiles")
 
 	closeStreams := setupStreams(cli, containerID, c)
 
+	debug.LogTime("setupStreams")
+
 	startContainer(cli, containerID)
 
+	debug.LogTime("startContainer")
+
 	setupSignalHandlers(cli, containerID)
+
+	debug.LogTime("setupSignals")
+
 	monitorTtySize(cli, containerID, c)
+
+	debug.LogTime("monitorTty")
 
 	waitChan := make(chan int, 1)
 
