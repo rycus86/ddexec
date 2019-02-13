@@ -4,9 +4,12 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/jsonmessage"
+	"github.com/pkg/errors"
 	"github.com/rycus86/ddexec/pkg/config"
 	"github.com/rycus86/ddexec/pkg/debug"
 	"io"
@@ -56,6 +59,8 @@ func prepareAndProcessImage(cli *client.Client, c *config.AppConfiguration, sc *
 
 			if image, _, err = cli.ImageInspectWithRaw(context.TODO(), c.Image); err != nil {
 				panic(err)
+			} else if image.Config.Labels["com.github.rycus86.ddexec.dockerfile.hash"] != hash {
+				panic(errors.New("the new image hash does not match the Dockerfile contents"))
 			}
 		}
 	}
@@ -91,7 +96,19 @@ func buildImage(cli *client.Client, c *config.AppConfiguration) {
 		panic(err)
 	} else {
 		defer response.Body.Close()
-		ioutil.ReadAll(response.Body) // TODO is there anything to do with this?
+
+		var buildMessage jsonmessage.JSONMessage
+		for {
+			if err := json.NewDecoder(response.Body).Decode(&buildMessage); err != nil {
+				break // TODO probably should check if this was EOF or something
+			}
+
+			if buildMessage.Error != nil {
+				panic(buildMessage.Error.Error())
+			} else {
+				fmt.Printf("> %s", buildMessage.Stream)
+			}
+		}
 	}
 }
 
@@ -101,6 +118,11 @@ func prepareBuildContext(c *config.AppConfiguration) io.Reader {
 		panic(err)
 	}
 	defer os.Remove(target.Name())
+
+	if debug.IsEnabled() {
+		fmt.Println("Dockerfile:")
+		fmt.Println(c.Dockerfile)
+	}
 
 	target.WriteString(c.Dockerfile)
 	target.Close()

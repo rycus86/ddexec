@@ -1,9 +1,13 @@
 package exec
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/rycus86/ddexec/pkg/config"
 	"github.com/rycus86/ddexec/pkg/files"
+	"github.com/tredoe/osutil/user/crypt"
+	"github.com/tredoe/osutil/user/crypt/sha512_crypt"
+	"io/ioutil"
 	"os"
 	"os/user"
 	"strconv"
@@ -25,10 +29,16 @@ func prepareUserAndGroupFiles(sc *config.StartupConfiguration) *files.PasswdFile
 		temporary = false
 	}
 
+	userPasswd := "!"
+
+	if sc.PasswordFile != "" {
+		userPasswd = generateHashedPassword(sc.PasswordFile)
+	}
+
 	shadow := files.WriteToTempfile(strings.TrimSpace(fmt.Sprintf(`
-%s:!::0:99999:7:::
+%s:%s::0:99999:7:::
 root:!::0:99999:7:::
-`, getUsername())))
+`, getUsername(), userPasswd)))
 
 	return &files.PasswdFiles{
 		Passwd:    passwd,
@@ -48,4 +58,28 @@ func getUsername() string {
 		panic(err)
 	}
 	return u.Username
+}
+
+func generateHashedPassword(passwordFile string) string {
+	passwd, err := ioutil.ReadFile(passwordFile)
+	if err != nil {
+		panic(err)
+	}
+
+	passwd = bytes.Trim(passwd, "\n")
+
+	if strings.HasPrefix(string(passwd), sha512_crypt.MagicPrefix) {
+		// already an encoded password (with mkpasswd perhaps)
+		return string(passwd)
+	}
+
+	sha512 := crypt.New(crypt.SHA512)
+	shaSalt := sha512_crypt.GetSalt()
+	salt := shaSalt.Generate(16)
+
+	if generated, err := sha512.Generate(passwd, salt); err != nil {
+		panic(err)
+	} else {
+		return generated
+	}
 }

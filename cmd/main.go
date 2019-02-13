@@ -41,6 +41,7 @@ DDEXEC_DESKTOP_MODE     Assume launching a new X desktop manager (shares udev)
 DDEXEC_INTERACTIVE      Attach stdin for interactive sessions
 DDEXEC_TTY              Configure the terminal (tty mode)
 KEEP_USER               Keep the user in the target image (instead of injecting the host user)
+PASSWORD_FILE           Password file to use to generate the container user's password
 USE_HOST_X11            Use the X11 socket from the host rather than from a shared volume
 USE_HOST_DBUS           Use the DBus sockets from the host rather than from a shared volume
 USE_HOST                Use the X11 and DBus sockets from the host
@@ -54,6 +55,9 @@ DO_NOT_SHARE_HOME       Do not share a common HOME folder with the application
 DO_NOT_SHARE_TOOLS      Do not share the ddexec tools with the application
 DDEXEC_DEBUG            Print debug messages
 DDEXEC_TIMER            Print code execution timing information`)
+
+		fmt.Println()
+		fmt.Println("ddexec version", config.GetVersion(), "( https://github.com/rycus86/ddexec )")
 
 		os.Exit(0)
 	}
@@ -178,8 +182,14 @@ func getStartupConfiguration(c *config.AppConfiguration) *config.StartupConfigur
 	sc.KeepUser = sc.KeepUser || env.IsSet("KEEP_USER")
 	sc.UseHostX11 = sc.UseHostX11 || env.IsSet("USE_HOST_X11") || env.IsSet("USE_HOST")
 	sc.UseHostDBus = sc.UseHostDBus || env.IsSet("USE_HOST_DBUS") || env.IsSet("USE_HOST")
-	sc.Args = args
+
+	if sc.PasswordFile == "" && env.IsSet("PASSWORD_FILE") {
+		sc.PasswordFile = os.Getenv("PASSWORD_FILE")
+	}
+
 	sc.XorgLogs = "/var/tmp/ddexec-xorg-logs"
+
+	sc.Args = args
 
 	return sc
 }

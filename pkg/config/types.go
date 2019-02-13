@@ -17,6 +17,8 @@ type StartupConfiguration struct {
 	ShareTools        bool `yaml:"share_tools"`
 	DaemonMode        bool `yaml:"daemon"`
 
+	PasswordFile string `yaml:"password_file"`
+
 	XorgLogs string `yaml:"-"`
 
 	Args []string `yaml:"-"`
