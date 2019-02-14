@@ -38,6 +38,9 @@ func checkArgs() {
 Environment variables supported:
 
 DDEXEC_DESKTOP_MODE     Assume launching a new X desktop manager (shares udev)
+DDEXEC_PULL             Pull the parent images
+DDEXEC_NO_CACHE         Don't use the build cache when building images
+DDEXEC_REBUILD          Pull the parent images and don't use the build cache
 DDEXEC_INTERACTIVE      Attach stdin for interactive sessions
 DDEXEC_TTY              Configure the terminal (tty mode)
 KEEP_USER               Keep the user in the target image (instead of injecting the host user)

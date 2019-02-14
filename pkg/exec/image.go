@@ -9,9 +9,11 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/jsonmessage"
+	"github.com/docker/docker/pkg/term"
 	"github.com/pkg/errors"
 	"github.com/rycus86/ddexec/pkg/config"
 	"github.com/rycus86/ddexec/pkg/debug"
+	"github.com/rycus86/ddexec/pkg/env"
 	"io"
 	"io/ioutil"
 	"os"
@@ -20,34 +22,60 @@ import (
 )
 
 func prepareAndProcessImage(cli *client.Client, c *config.AppConfiguration, sc *config.StartupConfiguration) {
-	image, _, err := cli.ImageInspectWithRaw(context.TODO(), c.Image)
-	if err != nil {
-		if client.IsErrNotFound(err) { // TODO we might want to build here
-			if c.Dockerfile != "" {
-				buildImage(cli, c)
+	var (
+		image             types.ImageInspect
+		shouldBuildOrPull = shouldPullImage()
+
+		err error
+	)
+
+	if !shouldBuildOrPull {
+		image, _, err = cli.ImageInspectWithRaw(context.TODO(), c.Image)
+		if err != nil {
+			if client.IsErrNotFound(err) {
+				shouldBuildOrPull = true
 			} else {
-				if debug.IsEnabled() {
-					fmt.Println("Pulling image for", c.Image, "...")
-				}
-
-				if reader, err := cli.ImagePull(
-					context.TODO(),
-					c.Image, // TODO maybe allow having the image name empty and default to the filename
-					types.ImagePullOptions{}); err != nil {
-					panic(err)
-				} else {
-					defer reader.Close()
-					ioutil.ReadAll(reader) // TODO is there anything to do with this?
-				}
-			}
-
-			if image, _, err = cli.ImageInspectWithRaw(context.TODO(), c.Image); err != nil {
 				panic(err)
 			}
+		}
+	}
+
+	if shouldBuildOrPull {
+		if c.Dockerfile != "" {
+			buildImage(cli, c)
 		} else {
+			if debug.IsEnabled() {
+				fmt.Println("Pulling image for", c.Image, "...")
+			}
+
+			if reader, err := cli.ImagePull(
+				context.TODO(),
+				c.Image, // TODO maybe allow having the image name empty and default to the filename
+				types.ImagePullOptions{}); err != nil {
+				panic(err)
+			} else {
+				defer reader.Close()
+
+				var pullMessage jsonmessage.JSONMessage
+				for {
+					if err := json.NewDecoder(reader).Decode(&pullMessage); err != nil {
+						break // TODO probably should check if this was EOF or something
+					}
+
+					if pullMessage.Error != nil {
+						panic(pullMessage.Error.Error())
+					} else if debug.IsEnabled() {
+						_, isTerminal := term.GetFdInfo(os.Stdin)
+						pullMessage.Display(os.Stdout, isTerminal)
+					}
+				}
+			}
+		}
+
+		if image, _, err = cli.ImageInspectWithRaw(context.TODO(), c.Image); err != nil {
 			panic(err)
 		}
-	} // TODO check here if we want to update the image
+	}
 
 	if c.Dockerfile != "" {
 		hash := hashDockerfile(c.Dockerfile)
@@ -90,8 +118,11 @@ func buildImage(cli *client.Client, c *config.AppConfiguration) {
 			"com.github.rycus86.ddexec.built_at":        time.Now().Format(time.RFC3339),
 			"com.github.rycus86.ddexec.dockerfile.hash": hashDockerfile(c.Dockerfile), // TODO const label key
 		},
-		Tags:   []string{c.Image}, // TODO infer image name from filename if empty?
-		Remove: true,
+		Tags:        []string{c.Image}, // TODO infer image name from filename if empty?
+		Remove:      true,
+		ForceRemove: true,
+		PullParent:  shouldPullImage(),
+		NoCache:     shouldSkipBuildCache(),
 	}); err != nil {
 		panic(err)
 	} else {
@@ -105,8 +136,9 @@ func buildImage(cli *client.Client, c *config.AppConfiguration) {
 
 			if buildMessage.Error != nil {
 				panic(buildMessage.Error.Error())
-			} else {
-				fmt.Printf("> %s", buildMessage.Stream)
+			} else if debug.IsEnabled() {
+				_, isTerminal := term.GetFdInfo(os.Stdin)
+				buildMessage.Display(os.Stdout, isTerminal)
 			}
 		}
 	}
@@ -134,6 +166,14 @@ func prepareBuildContext(c *config.AppConfiguration) io.Reader {
 	} else {
 		return tar
 	}
+}
+
+func shouldPullImage() bool {
+	return env.IsSet("DDEXEC_PULL") || env.IsSet("DDEXEC_REBUILD")
+}
+
+func shouldSkipBuildCache() bool {
+	return env.IsSet("DDEXEC_NO_CACHE") || env.IsSet("DDEXEC_REBUILD")
 }
 
 func hashDockerfile(dockerfile string) string {
