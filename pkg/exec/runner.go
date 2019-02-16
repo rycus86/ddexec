@@ -41,7 +41,11 @@ func Run(c *config.AppConfiguration, sc *config.StartupConfiguration) (chan int,
 
 	debug.LogTime("copyFiles")
 
-	closeStreams := setupStreams(cli, containerID, c)
+	checkStreams(sc)
+
+	debug.LogTime("checkStreams")
+
+	closeStreams := setupStreams(cli, containerID, c, sc)
 
 	debug.LogTime("setupStreams")
 
@@ -53,7 +57,7 @@ func Run(c *config.AppConfiguration, sc *config.StartupConfiguration) (chan int,
 
 	debug.LogTime("setupSignals")
 
-	monitorTtySize(cli, containerID, c)
+	monitorTtySize(cli, containerID, c, sc)
 
 	debug.LogTime("monitorTty")
 

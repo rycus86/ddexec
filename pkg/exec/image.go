@@ -65,7 +65,7 @@ func prepareAndProcessImage(cli *client.Client, c *config.AppConfiguration, sc *
 					if pullMessage.Error != nil {
 						panic(pullMessage.Error.Error())
 					} else if debug.IsEnabled() {
-						_, isTerminal := term.GetFdInfo(os.Stdin)
+						_, isTerminal := term.GetFdInfo(os.Stdout)
 						pullMessage.Display(os.Stdout, isTerminal)
 					}
 				}
@@ -137,7 +137,7 @@ func buildImage(cli *client.Client, c *config.AppConfiguration) {
 			if buildMessage.Error != nil {
 				panic(buildMessage.Error.Error())
 			} else if debug.IsEnabled() {
-				_, isTerminal := term.GetFdInfo(os.Stdin)
+				_, isTerminal := term.GetFdInfo(os.Stdout)
 				buildMessage.Display(os.Stdout, isTerminal)
 			}
 		}

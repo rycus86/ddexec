@@ -29,6 +29,8 @@ type StartupConfiguration struct {
 	ImageHome string `yaml:"-"`
 
 	DaemonHasSeccompSupport bool `yaml:"-"`
+	StdInIsTerminal         bool `yaml:"-"`
+	StdOutIsTerminal        bool `yaml:"-"`
 }
 
 type AppConfiguration struct {

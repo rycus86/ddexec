@@ -13,9 +13,24 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
-func setupStreams(cli *client.Client, containerID string, c *config.AppConfiguration) func() {
+func checkStreams(sc *config.StartupConfiguration) {
+	var isTerminal bool
+
+	_, isTerminal = term.GetFdInfo(os.Stdin)
+	sc.StdInIsTerminal = isTerminal
+
+	_, isTerminal = term.GetFdInfo(os.Stdout)
+	sc.StdOutIsTerminal = isTerminal
+
+	if debug.IsEnabled() {
+		fmt.Println("StdInIsTerminal:", sc.StdInIsTerminal, "StdOutIsTerminal:", sc.StdOutIsTerminal)
+	}
+}
+
+func setupStreams(cli *client.Client, containerID string, c *config.AppConfiguration, sc *config.StartupConfiguration) func() {
 	var closerFunc func()
 
 	resp, err := cli.ContainerAttach(context.TODO(), containerID, types.ContainerAttachOptions{
@@ -32,7 +47,7 @@ func setupStreams(cli *client.Client, containerID string, c *config.AppConfigura
 		fmt.Println("StdinOpen:", c.StdinOpen, "Tty:", c.Tty)
 	}
 
-	if c.StdinOpen {
+	if c.StdinOpen && sc.StdInIsTerminal {
 		// set raw terminal
 		inFd, _ := term.GetFdInfo(os.Stdin)
 		state, err := term.SetRawTerminal(inFd)
@@ -49,6 +64,10 @@ func setupStreams(cli *client.Client, containerID string, c *config.AppConfigura
 	go func() {
 		if c.Tty {
 			io.Copy(os.Stdout, resp.Reader)
+
+			if closerFunc != nil {
+				closerFunc()
+			}
 		} else {
 			stdcopy.StdCopy(os.Stdout, os.Stderr, resp.Reader)
 		}
@@ -62,17 +81,23 @@ func setupStreams(cli *client.Client, containerID string, c *config.AppConfigura
 	return closerFunc
 }
 
-func monitorTtySize(cli *client.Client, containerID string, c *config.AppConfiguration) {
+func monitorTtySize(cli *client.Client, containerID string, c *config.AppConfiguration, sc *config.StartupConfiguration) {
 	if !c.StdinOpen && !c.Tty {
+		return
+	}
+
+	if !sc.StdOutIsTerminal {
 		return
 	}
 
 	fd, _ := term.GetFdInfo(os.Stdin)
 
-	resizeTty := func() {
+	resizeTty := func() error {
 		ws, err := term.GetWinsize(fd)
-		if err != nil || (ws.Height == 0 && ws.Width == 0) {
-			return
+		if err != nil {
+			return err
+		} else if ws.Height == 0 && ws.Width == 0 {
+			return nil
 		}
 
 		options := types.ResizeOptions{
@@ -80,10 +105,20 @@ func monitorTtySize(cli *client.Client, containerID string, c *config.AppConfigu
 			Width:  uint(ws.Width),
 		}
 
-		cli.ContainerResize(context.TODO(), containerID, options)
+		return cli.ContainerResize(context.TODO(), containerID, options)
 	}
 
-	resizeTty()
+	if err := resizeTty(); err != nil {
+		go func() {
+			var err error
+			for retry := 0; retry < 5; retry++ {
+				time.Sleep(10 * time.Millisecond)
+				if err = resizeTty(); err == nil {
+					break
+				}
+			}
+		}()
+	}
 
 	sigchan := make(chan os.Signal, 1)
 	signal.Notify(sigchan, syscall.SIGWINCH)
