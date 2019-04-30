@@ -3,6 +3,7 @@ package exec
 import (
 	"context"
 	"fmt"
+	"github.com/docker/docker/client"
 	"github.com/rycus86/ddexec/pkg/config"
 	"github.com/rycus86/ddexec/pkg/debug"
 	"time"
@@ -60,6 +61,9 @@ func Run(c *config.AppConfiguration, sc *config.StartupConfiguration) (chan int,
 	debug.LogTime("setupSignals")
 
 	go func() {
+		// it's OK if the container goes away in the meantime
+		defer panicUnlessNotFoundError()
+
 		startTimer := time.Now()
 
 		setupNetworking(cli, containerID, sc)
@@ -88,5 +92,15 @@ func Run(c *config.AppConfiguration, sc *config.StartupConfiguration) (chan int,
 
 	return waitChan, func() {
 		cli.ContainerStop(context.TODO(), containerID, nil)
+	}
+}
+
+func panicUnlessNotFoundError() {
+	if err := recover(); err != nil {
+		if client.IsErrNotFound(err.(error)) {
+			// that's ok
+		} else {
+			panic(err)
+		}
 	}
 }
