@@ -58,6 +58,7 @@ DO_NOT_SHARE_VIDEO      Do not share /dev/dri and /dev/video0
 DO_NOT_SHARE_DOCKER     Do not share the Docker Engine API socket
 DO_NOT_SHARE_HOME       Do not share a common HOME folder with the application
 DO_NOT_SHARE_TOOLS      Do not share the ddexec tools with the application
+DDEXEC_UNIQUE_NAMES 	If you want unique container names with a timestamp instead of a counter
 DDEXEC_DEBUG            Print debug messages
 DDEXEC_TIMER            Print code execution timing information`)
 

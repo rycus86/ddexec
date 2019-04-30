@@ -64,6 +64,6 @@ func getFromContainer(cli *client.Client, containerID string, path string) fileT
 
 	return fileToCopy{
 		Contents: contents,
-		Header: hdr,
+		Header:   hdr,
 	}
 }
