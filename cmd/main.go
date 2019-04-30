@@ -9,6 +9,7 @@ import (
 	"github.com/rycus86/ddexec/pkg/exec"
 	"github.com/rycus86/ddexec/pkg/parse"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -43,6 +44,7 @@ DDEXEC_NO_CACHE         Don't use the build cache when building images
 DDEXEC_REBUILD          Pull the parent images and don't use the build cache
 DDEXEC_INTERACTIVE      Attach stdin for interactive sessions
 DDEXEC_TTY              Configure the terminal (tty mode)
+DDEXEC_HOSTNAMES		Comma-separated, then '=' separated hostname mappings (use 'host' for the bridge gateway)
 KEEP_USER               Keep the user in the target image (instead of injecting the host user)
 PASSWORD_FILE           Password file to use to generate the container user's password
 USE_HOST_X11            Use the X11 socket from the host rather than from a shared volume
@@ -188,6 +190,10 @@ func getStartupConfiguration(c *config.AppConfiguration) *config.StartupConfigur
 
 	if sc.PasswordFile == "" && env.IsSet("PASSWORD_FILE") {
 		sc.PasswordFile = os.Getenv("PASSWORD_FILE")
+	}
+
+	if env.IsSet("DDEXEC_HOSTNAMES") {
+		sc.Hostnames = append(sc.Hostnames, strings.Split(os.Getenv("DDEXEC_HOSTNAMES"), ",")...)
 	}
 
 	sc.XorgLogs = "/var/tmp/ddexec-xorg-logs"

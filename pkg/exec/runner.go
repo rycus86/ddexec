@@ -2,8 +2,10 @@ package exec
 
 import (
 	"context"
+	"fmt"
 	"github.com/rycus86/ddexec/pkg/config"
 	"github.com/rycus86/ddexec/pkg/debug"
+	"time"
 )
 
 func Run(c *config.AppConfiguration, sc *config.StartupConfiguration) (chan int, func()) {
@@ -56,6 +58,17 @@ func Run(c *config.AppConfiguration, sc *config.StartupConfiguration) (chan int,
 	setupSignalHandlers(cli, containerID)
 
 	debug.LogTime("setupSignals")
+
+	go func() {
+		startTimer := time.Now()
+
+		setupNetworking(cli, containerID, sc)
+
+		if debug.IsTimerEnabled() {
+			tenthMills := time.Since(startTimer).Nanoseconds() / int64(100*time.Microsecond)
+			fmt.Printf("time :: %25s :: %4d.%1d ms\n", "setupNetworking", tenthMills/10, tenthMills%10)
+		}
+	}()
 
 	monitorTtySize(cli, containerID, c, sc)
 

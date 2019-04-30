@@ -19,6 +19,8 @@ type StartupConfiguration struct {
 
 	PasswordFile string `yaml:"password_file"`
 
+	Hostnames []string `yaml:"hostnames"`
+
 	XorgLogs string `yaml:"-"`
 
 	Args []string `yaml:"-"`
