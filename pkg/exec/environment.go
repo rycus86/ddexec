@@ -42,11 +42,21 @@ func prepareEnvironment(c *config.AppConfiguration, sc *config.StartupConfigurat
 }
 
 func prepareDdexecEnvironment() []string {
-	return []string{
+	env := []string{
 		DDEXEC_ENV + "=" + strconv.Itoa(1),
 		control.EnvHome + "=" + control.GetHostHome(),
 		control.EnvServerSocket + "=" + control.GetServerSocket(),
 	}
+
+	if hosts, ok := os.LookupEnv("DDEXEC_HOSTNAMES"); ok {
+		env = append(env, fmt.Sprintf("%s=%s", "DDEXEC_HOSTNAMES", hosts))
+	}
+
+	if uniqueNames, ok := os.LookupEnv("DDEXEC_UNIQUE_NAMES"); ok {
+		env = append(env, fmt.Sprintf("%s=%s", "DDEXEC_UNIQUE_NAMES", uniqueNames))
+	}
+
+	return env
 }
 
 func prepareX11Environment(sc *config.StartupConfiguration) []string {

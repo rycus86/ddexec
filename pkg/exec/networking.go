@@ -3,8 +3,11 @@ package exec
 import (
 	"archive/tar"
 	"context"
+	"fmt"
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/rycus86/ddexec/pkg/config"
+	"github.com/rycus86/ddexec/pkg/debug"
 	"io/ioutil"
 	"strings"
 )
@@ -13,10 +16,8 @@ func setupNetworking(cli *client.Client, containerID string, sc *config.StartupC
 	gwAddress := getGatewayAddress(cli, containerID)
 
 	etcHostsFile := getFromContainer(cli, containerID, "/etc/hosts")
-
-	contents := string(etcHostsFile.Contents) + "\n"
-
-	contents += "\n" + gwAddress + "  ddexec.local" + "\n"
+	comment := "\n\n# Changed by ddexec with copy"
+	toAppend := "\n\n" + gwAddress + "  ddexec.local" + "\n\n"
 
 	for _, mapping := range sc.Hostnames {
 		parts := strings.Split(mapping, "=")
@@ -26,16 +27,42 @@ func setupNetworking(cli *client.Client, containerID string, sc *config.StartupC
 			target = gwAddress
 		}
 
-		contents += "\n" + target + "  " + hostname
+		toAppend += target + "  " + hostname + "\n"
 	}
 
-	etcHostsFile.Contents = []byte(contents)
+	etcHostsFile.Contents = []byte(string(etcHostsFile.Contents) + comment + toAppend)
 	etcHostsFile.Header.Size = int64(len(etcHostsFile.Contents))
 
-	etcHostsFile.Source = "/etc/hosts"
+	etcHostsFile.Source = "modified:/etc/hosts"
 	etcHostsFile.Target = "/etc/hosts"
 
-	copyToContainer(cli, containerID, "/etc", etcHostsFile)
+	if err := copyToContainer(cli, containerID, "/etc", etcHostsFile); err != nil {
+		if debug.IsEnabled() {
+			fmt.Println("Failed to copy /etc/hosts into the container:", err)
+		}
+
+		if execErr := tryWriteEtcHosts(cli, containerID, toAppend); execErr != nil {
+			if debug.IsEnabled() {
+				fmt.Println("Failed to write /etc/hosts with sh+echo:", execErr)
+			}
+
+			panic(err)
+		}
+	}
+}
+
+func tryWriteEtcHosts(cli *client.Client, containerID string, toAppend string) error {
+	comment := "\n\n# Changed by ddexec with sh+echo"
+
+	response, err := cli.ContainerExecCreate(context.TODO(), containerID, types.ExecConfig{
+		User: "0",
+		Cmd:  []string{"sh", "-c", "echo '" + comment + toAppend + "' >> /etc/hosts"},
+	})
+	if err != nil {
+		return err
+	}
+
+	return cli.ContainerExecStart(context.TODO(), response.ID, types.ExecStartCheck{Detach: true})
 }
 
 func getGatewayAddress(cli *client.Client, containerID string) string {

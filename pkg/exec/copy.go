@@ -52,10 +52,12 @@ func copyFiles(cli *client.Client, containerID string, sc *config.StartupConfigu
 		toCopy = append(toCopy, fileToCopy{Source: getXauth(), Target: getXauth()})
 	}
 
-	copyToContainer(cli, containerID, "/", toCopy...)
+	if err := copyToContainer(cli, containerID, "/", toCopy...); err != nil {
+		panic(err)
+	}
 }
 
-func copyToContainer(cli *client.Client, containerId string, dstPath string, files ...fileToCopy) {
+func copyToContainer(cli *client.Client, containerId string, dstPath string, files ...fileToCopy) error {
 	if debug.IsEnabled() {
 		for _, file := range files {
 			fmt.Println("Copying", file.Source, "to", file.Target, "...")
@@ -64,7 +66,7 @@ func copyToContainer(cli *client.Client, containerId string, dstPath string, fil
 
 	tarFile, err := createTar(files...)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	if err := cli.CopyToContainer(
@@ -73,8 +75,10 @@ func copyToContainer(cli *client.Client, containerId string, dstPath string, fil
 		dstPath,
 		tarFile,
 		types.CopyToContainerOptions{}); err != nil {
-		panic(err)
+		return err
 	}
+
+	return nil
 }
 
 func createTar(files ...fileToCopy) (io.Reader, error) {
@@ -93,12 +97,12 @@ func createTar(files ...fileToCopy) (io.Reader, error) {
 		} else {
 			fi, err := os.Stat(file.Source)
 			if err != nil {
-				panic(err)
+				return nil, err
 			}
 
 			contents, err = ioutil.ReadFile(file.Source)
 			if err != nil {
-				panic(err)
+				return nil, err
 			}
 
 			hdr = &tar.Header{
@@ -111,16 +115,16 @@ func createTar(files ...fileToCopy) (io.Reader, error) {
 		}
 
 		if err := tw.WriteHeader(hdr); err != nil {
-			panic(err)
+			return nil, err
 		}
 
 		if _, err := tw.Write(contents); err != nil {
-			panic(err)
+			return nil, err
 		}
 	}
 
 	if err := tw.Close(); err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	return &b, nil
