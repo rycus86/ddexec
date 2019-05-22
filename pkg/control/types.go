@@ -15,3 +15,12 @@ type CheckDeviceRequest struct {
 type CheckDeviceResponse struct {
 	Exists bool
 }
+
+type RunCommandRequest struct {
+	ContainerId string
+	Command     string
+}
+
+type RunCommandResponse struct {
+	ExitCode int
+}

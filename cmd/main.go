@@ -8,6 +8,7 @@ import (
 	"github.com/rycus86/ddexec/pkg/env"
 	"github.com/rycus86/ddexec/pkg/exec"
 	"github.com/rycus86/ddexec/pkg/parse"
+	"github.com/rycus86/ddexec/pkg/xdgopen"
 	"os"
 	"strings"
 )
@@ -18,6 +19,11 @@ func main() {
 }
 
 func checkArgs() {
+	if name, err := os.Executable(); err == nil && strings.HasSuffix(name, "/xdg-open") {
+		xdgopen.CheckArgs()
+		return
+	}
+
 	if debug.IsEnabled() {
 		fmt.Println("Args:", os.Args)
 	}
@@ -72,6 +78,10 @@ DDEXEC_TIMER            Print code execution timing information`)
 }
 
 func runMain() int {
+	if name, err := os.Executable(); err == nil && strings.HasSuffix(name, "/xdg-open") {
+		os.Exit(xdgopen.Invoke(os.Args[1]))
+	}
+
 	if debug.IsEnabled() {
 		fmt.Println("Starting...")
 	}

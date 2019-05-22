@@ -44,6 +44,9 @@ func copyFiles(cli *client.Client, containerID string, sc *config.StartupConfigu
 		toCopy = append(toCopy, fileToCopy{Source: getExecutable(), Target: "/usr/local/bin/ddexec"})
 	}
 
+	// TODO condition?
+	toCopy = append(toCopy, fileToCopy{Source: getExecutable(), Target: "/usr/local/ddexec-xdg/bin/xdg-open"})
+
 	if !sc.DesktopMode {
 		if err := prepareXauth(); err != nil {
 			panic(err)

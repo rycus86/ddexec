@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rycus86/ddexec/pkg/debug"
 	"github.com/rycus86/ddexec/pkg/env"
+	"github.com/rycus86/ddexec/pkg/xdgexec"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -52,6 +53,7 @@ func StartServerIfNecessary() {
 
 	http.HandleFunc("/mkdir", handleMkdir)
 	http.HandleFunc("/checkDevice", handleCheckDevice)
+	http.HandleFunc("/runCommand", handleRunCommand)
 
 	go runServer(l, tmpDir)
 }
@@ -131,5 +133,33 @@ func handleCheckDevice(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(&CheckDeviceResponse{
 		Exists: err == nil,
+	})
+}
+
+func handleRunCommand(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	if r.Method != "POST" {
+		w.WriteHeader(400)
+		return
+	}
+
+	request := RunCommandRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		w.WriteHeader(400)
+		return
+	}
+
+	var exitCode int
+	if ok, err := xdgexec.ExecInContainer(request.ContainerId, request.Command); err == nil && ok {
+		exitCode = 0
+	} else {
+		exitCode = 1 // TODO proxy the actual exit code, maybe logs too
+	}
+
+	w.WriteHeader(200)
+	w.Header().Add("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(&RunCommandResponse{
+		ExitCode: exitCode,
 	})
 }

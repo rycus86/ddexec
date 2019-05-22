@@ -19,7 +19,8 @@ type StartupConfiguration struct {
 
 	PasswordFile string `yaml:"password_file"`
 
-	Hostnames []string `yaml:"hostnames"`
+	Hostnames       []string          `yaml:"hostnames"`
+	XdgOpenMappings map[string]string `yaml:"xdg_open"`
 
 	XorgLogs string `yaml:"-"`
 

@@ -94,10 +94,10 @@ func prepareTimezoneEnvironment() []string {
 }
 
 func preparePathEnvironment(sc *config.StartupConfiguration) []string {
-	if strings.Contains(sc.EnvPath, ":") {
-		sc.EnvPath += ":/usr/local/ddexec/bin"
+	if sc.EnvPath != "" {
+		sc.EnvPath = "/usr/local/ddexec-xdg/bin:" + sc.EnvPath + ":/usr/local/ddexec/bin"
 	} else {
-		sc.EnvPath = "/usr/local/ddexec/bin"
+		sc.EnvPath = "/usr/local/ddexec-xdg/bin:/usr/local/ddexec/bin"
 	}
 
 	return []string{"PATH=" + sc.EnvPath}

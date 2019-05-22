@@ -6,6 +6,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/rycus86/ddexec/pkg/config"
 	"github.com/rycus86/ddexec/pkg/debug"
+	"github.com/rycus86/ddexec/pkg/xdgopen"
 	"time"
 )
 
@@ -60,6 +61,10 @@ func Run(c *config.AppConfiguration, sc *config.StartupConfiguration) (chan int,
 
 	debug.LogTime("setupSignals")
 
+	xdgopen.Register(containerID, sc)
+
+	debug.LogTime("xdgopen.Register")
+
 	go func() {
 		// it's OK if the container goes away in the meantime
 		defer panicUnlessNotFoundError()
@@ -87,6 +92,9 @@ func Run(c *config.AppConfiguration, sc *config.StartupConfiguration) (chan int,
 		}
 
 		exitCode := waitForExit(cli, containerID)
+
+		xdgopen.Clear(containerID)
+
 		waitChan <- exitCode
 	}()
 
