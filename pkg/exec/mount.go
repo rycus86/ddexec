@@ -19,7 +19,7 @@ func prepareMounts(c *config.AppConfiguration, sc *config.StartupConfiguration) 
 
 	mountList = append(mountList, mount.Mount{
 		Type:   mount.TypeBind,
-		Source: control.GetDirectoryToShare(),
+		Source: control.EnsureSourceExists(control.GetDirectoryToShare()),
 		Target: control.GetDirectoryToShare(),
 	})
 

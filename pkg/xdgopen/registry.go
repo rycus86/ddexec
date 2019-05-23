@@ -17,6 +17,7 @@ func Register(containerId string, sc *config.StartupConfiguration) {
 	f, err := os.OpenFile(filepath.Join(control.GetDirectoryToShare(), "xdg_open."+containerId), os.O_WRONLY|os.O_CREATE, os.FileMode(0x777))
 	if err != nil && debug.IsEnabled() {
 		fmt.Println("Failed to register xdg-open mappings for", containerId, ":", err)
+		return
 	}
 	defer f.Close()
 

@@ -59,10 +59,16 @@ ${DOWNLOAD_COMMAND} ddexec "${BINARY_URL}" &&
 echo
 echo "./ddexec successfully downloaded"
 echo
-echo "You might want to move it to /usr/local/bin :"
+
+MOVE_TARGET="/usr/local/bin/"
+if command -v ddexec >/dev/null; then
+    MOVE_TARGET="$(command -v ddexec)"
+fi
+
+echo "You might want to move it to ${MOVE_TARGET} :"
 
 if [ "$(id -u)" = "0" ]; then
-    echo '# mv ddexec /usr/local/bin/'
+    printf '# mv ddexec %s\n' "$MOVE_TARGET"
 else
-    echo '$ sudo mv ddexec /usr/local/bin/'
+    printf '$ sudo mv ddexec %s\n' "$MOVE_TARGET"
 fi
