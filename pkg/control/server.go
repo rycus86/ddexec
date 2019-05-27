@@ -14,10 +14,7 @@ import (
 	"path"
 )
 
-const (
-	EnvServerSocket = "DDEXEC_SERVER_SOCK"
-	EnvControlDir   = "DDEXEC_CONTROL_DIR"
-)
+const EnvServerSocket = "DDEXEC_SERVER_SOCK"
 
 var serverSocket string
 
@@ -30,9 +27,7 @@ func GetServerSocket() string {
 }
 
 func GetDirectoryToShare() string {
-	if env.IsSet(EnvControlDir) {
-		return os.Getenv(EnvControlDir)
-	} else if sock := GetServerSocket(); sock == "" {
+	if sock := GetServerSocket(); sock == "" {
 		panic(errors.New("no control socket found"))
 	} else {
 		return path.Dir(sock)
@@ -40,25 +35,16 @@ func GetDirectoryToShare() string {
 }
 
 func StartServerIfNecessary() {
-	if env.IsSet(EnvServerSocket) || env.IsSet(EnvControlDir) {
+	if env.IsSet(EnvServerSocket) {
 		return
 	}
 
-	var controlDir string
-
-	if env.IsSet(EnvControlDir) {
-		controlDir = EnsureSourceExists(os.Getenv(EnvControlDir))
-
-	} else {
-		tmpDir, err := ioutil.TempDir("", "ddexec")
-		if err != nil {
-			panic(err)
-		}
-
-		controlDir = tmpDir
+	tmpDir, err := ioutil.TempDir("", "ddexec")
+	if err != nil {
+		panic(err)
 	}
 
-	serverSocket = path.Join(controlDir, "ddexec.sock")
+	serverSocket = path.Join(tmpDir, "ddexec.sock")
 
 	l, err := net.Listen("unix", serverSocket)
 	if err != nil {
@@ -69,11 +55,11 @@ func StartServerIfNecessary() {
 	http.HandleFunc("/checkDevice", handleCheckDevice)
 	http.HandleFunc("/runCommand", handleRunCommand)
 
-	go runServer(l, controlDir)
+	go runServer(l, tmpDir)
 }
 
-func runServer(l net.Listener, controlDir string) {
-	defer os.RemoveAll(controlDir)
+func runServer(l net.Listener, tmpDir string) {
+	defer os.RemoveAll(tmpDir)
 	defer l.Close()
 
 	http.Serve(l, nil)

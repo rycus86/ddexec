@@ -44,7 +44,7 @@ func Invoke(arg string) int {
 }
 
 func dispatch(mimetype string, arg string) int {
-	files, err := filepath.Glob(filepath.Join(control.GetDirectoryToShare(), "xdg_open.*"))
+	files, err := filepath.Glob(filepath.Join(GetMappingDirectory(), "xdg_open.*"))
 	if err != nil {
 		fmt.Println("Failed to read xdg-open mappings:", err)
 		return 4 // The action failed.

@@ -6,6 +6,7 @@ import (
 	"github.com/rycus86/ddexec/pkg/control"
 	"github.com/rycus86/ddexec/pkg/convert"
 	"github.com/rycus86/ddexec/pkg/debug"
+	"github.com/rycus86/ddexec/pkg/xdgopen"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -46,6 +47,7 @@ func prepareDdexecEnvironment() []string {
 		DDEXEC_ENV + "=" + strconv.Itoa(1),
 		control.EnvHome + "=" + control.GetHostHome(),
 		control.EnvServerSocket + "=" + control.GetServerSocket(),
+		xdgopen.EnvControlDir + "=" + xdgopen.GetMappingDirectory(),
 	}
 
 	if hosts, ok := os.LookupEnv("DDEXEC_HOSTNAMES"); ok {

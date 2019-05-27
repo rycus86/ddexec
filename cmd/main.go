@@ -65,7 +65,7 @@ DO_NOT_SHARE_DOCKER     Do not share the Docker Engine API socket
 DO_NOT_SHARE_HOME       Do not share a common HOME folder with the application
 DO_NOT_SHARE_TOOLS      Do not share the ddexec tools with the application
 DDEXEC_UNIQUE_NAMES 	If you want unique container names with a timestamp instead of a counter
-DDEXEC_CONTROL_DIR      Directory to use for storing shared information (xdg-open mapping for example)
+DDEXEC_MAPPING_DIR      Directory to use for storing shared information (xdg-open mappings for example)
 DDEXEC_DEBUG            Print debug messages
 DDEXEC_TIMER            Print code execution timing information`)
 

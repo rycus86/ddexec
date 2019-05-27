@@ -9,6 +9,7 @@ import (
 	"github.com/rycus86/ddexec/pkg/control"
 	"github.com/rycus86/ddexec/pkg/debug"
 	"github.com/rycus86/ddexec/pkg/volume"
+	"github.com/rycus86/ddexec/pkg/xdgopen"
 	"os"
 	"strconv"
 	"strings"
@@ -22,6 +23,14 @@ func prepareMounts(c *config.AppConfiguration, sc *config.StartupConfiguration) 
 		Source: control.EnsureSourceExists(control.GetDirectoryToShare()),
 		Target: control.GetDirectoryToShare(),
 	})
+
+	if xdgopen.GetMappingDirectory() != control.GetDirectoryToShare() {
+		mountList = append(mountList, mount.Mount{
+			Type:   mount.TypeBind,
+			Source: control.EnsureSourceExists(xdgopen.GetMappingDirectory()),
+			Target: xdgopen.GetMappingDirectory(),
+		})
+	}
 
 	if sc.ShareDockerSocket {
 		mountList = append(mountList, mount.Mount{

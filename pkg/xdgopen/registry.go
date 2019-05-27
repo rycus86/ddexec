@@ -3,7 +3,6 @@ package xdgopen
 import (
 	"fmt"
 	"github.com/rycus86/ddexec/pkg/config"
-	"github.com/rycus86/ddexec/pkg/control"
 	"github.com/rycus86/ddexec/pkg/debug"
 	"os"
 	"path/filepath"
@@ -14,7 +13,7 @@ func Register(containerId string, sc *config.StartupConfiguration) {
 		return
 	}
 
-	f, err := os.OpenFile(filepath.Join(control.GetDirectoryToShare(), "xdg_open."+containerId), os.O_WRONLY|os.O_CREATE, os.FileMode(0x777))
+	f, err := os.Create(filepath.Join(GetMappingDirectory(), "xdg_open."+containerId))
 	if err != nil && debug.IsEnabled() {
 		fmt.Println("Failed to register xdg-open mappings for", containerId, ":", err)
 		return
@@ -23,11 +22,15 @@ func Register(containerId string, sc *config.StartupConfiguration) {
 
 	for key, value := range sc.XdgOpenMappings {
 		f.WriteString(key + "=" + value + "\n")
+
+		if debug.IsEnabled() {
+			fmt.Println("Registered xdg-open", key, "to", value)
+		}
 	}
 }
 
 func Clear(containerId string) {
-	os.Remove(filepath.Join(control.GetDirectoryToShare(), "xdg_open."+containerId))
+	os.Remove(filepath.Join(GetMappingDirectory(), "xdg_open."+containerId))
 }
 
 /*
