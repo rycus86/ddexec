@@ -8,9 +8,6 @@ script:
   - CGO_ENABLED=0 go build -v -o ddexec-${TRAVIS_BRANCH}.linux-amd64 ./cmd/main.go
   - cat ddexec-${TRAVIS_BRANCH}.linux-amd64 | sha256sum - > ddexec-${TRAVIS_BRANCH}.linux-amd64.sha256sum
 
-env:
-  - GO111MODULE=on
-
 deploy:
   provider: releases
   api_key:
