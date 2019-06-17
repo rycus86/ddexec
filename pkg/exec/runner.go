@@ -6,6 +6,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/rycus86/ddexec/pkg/config"
 	"github.com/rycus86/ddexec/pkg/debug"
+	"github.com/rycus86/ddexec/pkg/env"
 	"github.com/rycus86/ddexec/pkg/xdgopen"
 	"time"
 )
@@ -29,7 +30,11 @@ func Run(c *config.AppConfiguration, sc *config.StartupConfiguration) (chan int,
 
 	debug.LogTime("prepareImage")
 
-	env := prepareEnvironment(c, sc)
+	if env.IsSet("DDEXEC_IMAGE_ONLY") {
+		return nil, nil
+	}
+
+	environment := prepareEnvironment(c, sc)
 
 	debug.LogTime("prepareEnvironment")
 
@@ -37,7 +42,7 @@ func Run(c *config.AppConfiguration, sc *config.StartupConfiguration) (chan int,
 
 	debug.LogTime("prepareMounts")
 
-	containerID := createContainer(cli, c, sc, env, mounts)
+	containerID := createContainer(cli, c, sc, environment, mounts)
 
 	debug.LogTime("createContainer")
 

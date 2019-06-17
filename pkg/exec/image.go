@@ -131,7 +131,11 @@ func buildImage(cli *client.Client, c *config.AppConfiguration) {
 		var buildMessage jsonmessage.JSONMessage
 		for {
 			if err := json.NewDecoder(response.Body).Decode(&buildMessage); err != nil {
-				break // TODO probably should check if this was EOF or something
+				if err == io.EOF {
+					break
+				} else if debug.IsEnabled() {
+					fmt.Printf("Error reading the build output : %s (%T)\n", err, err)
+				}
 			}
 
 			if buildMessage.Error != nil {

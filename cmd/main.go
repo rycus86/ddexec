@@ -48,6 +48,7 @@ DDEXEC_DESKTOP_MODE     Assume launching a new X desktop manager (shares udev)
 DDEXEC_PULL             Pull the parent images
 DDEXEC_NO_CACHE         Don't use the build cache when building images
 DDEXEC_REBUILD          Pull the parent images and don't use the build cache
+DDEXEC_IMAGE_ONLY       Exit after building the images
 DDEXEC_INTERACTIVE      Attach stdin for interactive sessions
 DDEXEC_TTY              Configure the terminal (tty mode)
 DDEXEC_HOSTNAMES        Comma-separated, then '=' separated hostname mappings (use 'host' for the bridge gateway)
@@ -114,7 +115,10 @@ func runMain() int {
 
 	for _, item := range exec.Sorted(globalConfig) {
 		code, closer := run(item.Name, item.Config)
-		closers = append([]func(){closer}, closers...)
+
+		if closer != nil {
+			closers = append([]func(){closer}, closers...)
+		}
 
 		exitCode = code
 	}
@@ -136,6 +140,9 @@ func run(name string, configuration *config.AppConfiguration) (int, func()) {
 	debug.LogTime("startupConfig")
 
 	ch, closer := exec.Run(configuration, sc)
+	if ch == nil {
+		return 0, nil
+	}
 
 	if debug.IsEnabled() {
 		fmt.Println("Started", name)
