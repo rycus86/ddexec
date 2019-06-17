@@ -44,6 +44,7 @@ func generateName(cli *client.Client, c *config.AppConfiguration) string {
 	} else {
 		containers, err := cli.ContainerList(context.TODO(), types.ContainerListOptions{
 			Filters: filters.NewArgs(filters.Arg("name", name)),
+			All:     true,
 		})
 		if err != nil {
 			panic(err)
