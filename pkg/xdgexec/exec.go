@@ -7,6 +7,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"os"
+	"strings"
 )
 
 func ExecInContainer(containerId string, command string) (bool, error) {
@@ -21,6 +22,9 @@ func ExecInContainer(containerId string, command string) (bool, error) {
 	defer cli.Close()
 
 	cli.NegotiateAPIVersion(context.TODO()) // TODO
+
+	// TODO /bin/sh -c needs special characters escaped
+	command = strings.ReplaceAll(command, "&", "\\&")
 
 	exec, err := cli.ContainerExecCreate(context.TODO(), containerId, types.ExecConfig{
 		// TODO using /bin/sh for now
