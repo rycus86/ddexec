@@ -17,12 +17,12 @@ import (
 
 func createContainer(
 	cli *client.Client, c *config.AppConfiguration, sc *config.StartupConfiguration,
-	env []string, mounts []mount.Mount) string {
+	env []string, mounts []mount.Mount, extraHosts []string) string {
 
 	if created, err := cli.ContainerCreate(
 		context.TODO(), // TODO
 		newContainerConfig(c, sc, env),
-		newHostConfig(c, sc, mounts),
+		newHostConfig(c, sc, mounts, extraHosts),
 		&network.NetworkingConfig{},
 		generateName(cli, c),
 	); err != nil {

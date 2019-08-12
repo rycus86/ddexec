@@ -2,13 +2,11 @@ package exec
 
 import (
 	"context"
-	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/rycus86/ddexec/pkg/config"
 	"github.com/rycus86/ddexec/pkg/debug"
 	"github.com/rycus86/ddexec/pkg/env"
 	"github.com/rycus86/ddexec/pkg/xdgopen"
-	"time"
 )
 
 func Run(c *config.AppConfiguration, sc *config.StartupConfiguration) (chan int, func()) {
@@ -42,7 +40,11 @@ func Run(c *config.AppConfiguration, sc *config.StartupConfiguration) (chan int,
 
 	debug.LogTime("prepareMounts")
 
-	containerID := createContainer(cli, c, sc, environment, mounts)
+	extraHosts := prepareExtraHosts(cli, sc)
+
+	debug.LogTime("prepareExtraHosts")
+
+	containerID := createContainer(cli, c, sc, environment, mounts, extraHosts)
 
 	debug.LogTime("createContainer")
 
@@ -69,20 +71,6 @@ func Run(c *config.AppConfiguration, sc *config.StartupConfiguration) (chan int,
 	xdgopen.Register(containerID, sc)
 
 	debug.LogTime("xdgopen.Register")
-
-	go func() {
-		// it's OK if the container goes away in the meantime
-		defer panicUnlessNotFoundError()
-
-		startTimer := time.Now()
-
-		setupNetworking(cli, containerID, sc)
-
-		if debug.IsTimerEnabled() {
-			tenthMills := time.Since(startTimer).Nanoseconds() / int64(100*time.Microsecond)
-			fmt.Printf("time :: %25s :: %4d.%1d ms\n", "setupNetworking", tenthMills/10, tenthMills%10)
-		}
-	}()
 
 	monitorTtySize(cli, containerID, c, sc)
 

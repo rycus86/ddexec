@@ -20,7 +20,10 @@ import (
 	"strings"
 )
 
-func newHostConfig(c *config.AppConfiguration, sc *config.StartupConfiguration, mounts []mount.Mount) *container.HostConfig {
+func newHostConfig(
+	c *config.AppConfiguration, sc *config.StartupConfiguration,
+	mounts []mount.Mount, extraHosts []string) *container.HostConfig {
+
 	additionalGroups := c.GroupAdd
 
 	if !sc.KeepUser {
@@ -140,6 +143,7 @@ func newHostConfig(c *config.AppConfiguration, sc *config.StartupConfiguration, 
 		ShmSize:        unitToBytes(c.ShmSize),
 		Init:           c.Init,
 		PortBindings:   ports,
+		ExtraHosts:     extraHosts,
 		Resources: container.Resources{
 			OomKillDisable:    c.OomKillDisable,
 			PidsLimit:         c.PidsLimit,
