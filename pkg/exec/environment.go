@@ -2,6 +2,7 @@ package exec
 
 import (
 	"fmt"
+	"github.com/docker/docker/pkg/term"
 	"github.com/rycus86/ddexec/pkg/config"
 	"github.com/rycus86/ddexec/pkg/control"
 	"github.com/rycus86/ddexec/pkg/convert"
@@ -22,6 +23,7 @@ func prepareEnvironment(c *config.AppConfiguration, sc *config.StartupConfigurat
 	env = append(env, prepareX11Environment(sc)...)
 	env = append(env, prepareTimezoneEnvironment()...)
 	env = append(env, preparePathEnvironment(sc)...)
+	env = append(env, prepareTtySizeEnvironment(c, sc)...)
 
 	if !sc.KeepUser {
 		env = append(env, prepareUserEnvironment()...)
@@ -133,4 +135,28 @@ func prepareDBusEnvironment() []string {
 	}
 
 	return env
+}
+
+func prepareTtySizeEnvironment(c *config.AppConfiguration, sc *config.StartupConfiguration) []string {
+	if !c.StdinOpen && !c.Tty {
+		return nil
+	}
+
+	if !sc.StdOutIsTerminal {
+		return nil
+	}
+
+	fd, _ := term.GetFdInfo(os.Stdin)
+
+	ws, err := term.GetWinsize(fd)
+	if err != nil {
+		return nil
+	} else if ws.Height == 0 && ws.Width == 0 {
+		return nil
+	}
+
+	return []string{
+		"LINES=" + strconv.Itoa(int(ws.Height)),
+		"COLUMS=" + strconv.Itoa(int(ws.Width)),
+	}
 }

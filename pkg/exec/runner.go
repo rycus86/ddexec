@@ -2,7 +2,6 @@ package exec
 
 import (
 	"context"
-	"github.com/docker/docker/client"
 	"github.com/rycus86/ddexec/pkg/config"
 	"github.com/rycus86/ddexec/pkg/debug"
 	"github.com/rycus86/ddexec/pkg/env"
@@ -32,6 +31,10 @@ func Run(c *config.AppConfiguration, sc *config.StartupConfiguration) (chan int,
 		return nil, nil
 	}
 
+	checkStreams(sc)
+
+	debug.LogTime("checkStreams")
+
 	environment := prepareEnvironment(c, sc)
 
 	debug.LogTime("prepareEnvironment")
@@ -51,10 +54,6 @@ func Run(c *config.AppConfiguration, sc *config.StartupConfiguration) (chan int,
 	copyFiles(cli, containerID, sc)
 
 	debug.LogTime("copyFiles")
-
-	checkStreams(sc)
-
-	debug.LogTime("checkStreams")
 
 	closeStreams := setupStreams(cli, containerID, c, sc)
 
@@ -93,15 +92,9 @@ func Run(c *config.AppConfiguration, sc *config.StartupConfiguration) (chan int,
 
 	return waitChan, func() {
 		cli.ContainerStop(context.TODO(), containerID, nil)
-	}
-}
 
-func panicUnlessNotFoundError() {
-	if err := recover(); err != nil {
-		if client.IsErrNotFound(err.(error)) {
-			// that's ok
-		} else {
-			panic(err)
+		if selfId := getSelfContainerId(); selfId != "" {
+			restoreTtySize(cli, selfId)
 		}
 	}
 }

@@ -81,6 +81,28 @@ func setupStreams(cli *client.Client, containerID string, c *config.AppConfigura
 	return closerFunc
 }
 
+func resizeTty(cli *client.Client, containerID string) error {
+	fd, _ := term.GetFdInfo(os.Stdin)
+
+	ws, err := term.GetWinsize(fd)
+	if err != nil {
+		return err
+	} else if ws.Height == 0 && ws.Width == 0 {
+		return nil
+	}
+
+	options := types.ResizeOptions{
+		Height: uint(ws.Height),
+		Width:  uint(ws.Width),
+	}
+
+	if debug.IsEnabled() {
+		fmt.Println("Resizing", containerID, "to", options)
+	}
+
+	return cli.ContainerResize(context.TODO(), containerID, options)
+}
+
 func monitorTtySize(cli *client.Client, containerID string, c *config.AppConfiguration, sc *config.StartupConfiguration) {
 	if !c.StdinOpen && !c.Tty {
 		return
@@ -90,32 +112,22 @@ func monitorTtySize(cli *client.Client, containerID string, c *config.AppConfigu
 		return
 	}
 
-	fd, _ := term.GetFdInfo(os.Stdin)
-
-	resizeTty := func() error {
-		ws, err := term.GetWinsize(fd)
-		if err != nil {
-			return err
-		} else if ws.Height == 0 && ws.Width == 0 {
-			return nil
+	if err := resizeTty(cli, containerID); err != nil {
+		if debug.IsEnabled() {
+			fmt.Println("Failed to (initially) resize", containerID, ":", err)
 		}
 
-		options := types.ResizeOptions{
-			Height: uint(ws.Height),
-			Width:  uint(ws.Width),
-		}
-
-		return cli.ContainerResize(context.TODO(), containerID, options)
-	}
-
-	if err := resizeTty(); err != nil {
 		go func() {
 			var err error
 			for retry := 0; retry < 5; retry++ {
 				time.Sleep(10 * time.Millisecond)
-				if err = resizeTty(); err == nil {
+				if err = resizeTty(cli, containerID); err == nil {
 					break
 				}
+			}
+
+			if err != nil && debug.IsEnabled() {
+				fmt.Println("Failed to resize", containerID, ":", err)
 			}
 		}()
 	}
@@ -125,7 +137,17 @@ func monitorTtySize(cli *client.Client, containerID string, c *config.AppConfigu
 
 	go func() {
 		for range sigchan {
-			resizeTty()
+			resizeTty(cli, containerID)
 		}
 	}()
+}
+
+func restoreTtySize(cli *client.Client, containerID string) {
+	if debug.IsEnabled() {
+		fmt.Println("Restoring TTY size for", containerID)
+	}
+
+	if err := resizeTty(cli, containerID); err != nil && debug.IsEnabled() {
+		fmt.Println("Failed to resize", containerID, ":", err)
+	}
 }
