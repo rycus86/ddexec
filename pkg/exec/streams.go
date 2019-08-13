@@ -42,6 +42,9 @@ func setupStreams(cli *client.Client, containerID string, c *config.AppConfigura
 	if err != nil {
 		panic(err)
 	}
+	closerFunc = func() {
+		resp.Close()
+	}
 
 	if debug.IsEnabled() {
 		fmt.Println("StdinOpen:", c.StdinOpen, "Tty:", c.Tty)
@@ -56,6 +59,7 @@ func setupStreams(cli *client.Client, containerID string, c *config.AppConfigura
 		}
 		// restore raw terminal
 		closerFunc = func() {
+			resp.Close()
 			term.RestoreTerminal(inFd, state)
 		}
 	}
@@ -64,18 +68,20 @@ func setupStreams(cli *client.Client, containerID string, c *config.AppConfigura
 	go func() {
 		if c.Tty {
 			io.Copy(os.Stdout, resp.Reader)
-
-			if closerFunc != nil {
-				closerFunc()
-			}
 		} else {
-			stdcopy.StdCopy(os.Stdout, os.Stderr, resp.Reader)
+			stdcopy.StdCopy(os.Stdout, os.Stderr, resp.Conn)
 		}
+
+		closerFunc()
 	}()
 
 	// handle input
 	go func() {
 		io.Copy(resp.Conn, os.Stdin)
+
+		if !sc.StdInIsTerminal {
+			resp.CloseWrite()
+		}
 	}()
 
 	return closerFunc

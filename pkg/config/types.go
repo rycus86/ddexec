@@ -3,6 +3,8 @@ package config
 import "time"
 
 type StartupConfiguration struct {
+	UseDefaults bool `yaml:"use_defaults"`
+
 	DesktopMode       bool `yaml:"desktop_mode"`
 	KeepUser          bool `yaml:"keep_user"`
 	UseHostX11        bool `yaml:"use_host_x11"`
@@ -15,6 +17,7 @@ type StartupConfiguration struct {
 	ShareDockerSocket bool `yaml:"share_docker"`
 	ShareHomeDir      bool `yaml:"share_home"`
 	ShareTools        bool `yaml:"share_tools"`
+	FixHomeArgs       bool `yaml:"fix_home_args"`
 	DaemonMode        bool `yaml:"daemon"`
 
 	PasswordFile string `yaml:"password_file"`

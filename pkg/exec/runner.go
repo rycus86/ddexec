@@ -93,6 +93,7 @@ func Run(c *config.AppConfiguration, sc *config.StartupConfiguration) (chan int,
 	return waitChan, func() {
 		cli.ContainerStop(context.TODO(), containerID, nil)
 
+		// TODO maybe this is unnecessary
 		if selfId := getSelfContainerId(); selfId != "" {
 			restoreTtySize(cli, selfId)
 		}

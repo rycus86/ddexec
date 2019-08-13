@@ -65,6 +65,7 @@ DO_NOT_SHARE_VIDEO      Do not share /dev/dri and /dev/video0
 DO_NOT_SHARE_DOCKER     Do not share the Docker Engine API socket
 DO_NOT_SHARE_HOME       Do not share a common HOME folder with the application
 DO_NOT_SHARE_TOOLS      Do not share the ddexec tools with the application
+FIX_HOME_ARGS           Fix up the home path in command arguments (replace ${HOME} with ${DDEXEC_HOME})
 DDEXEC_UNIQUE_NAMES 	If you want unique container names with a timestamp instead of a counter
 DDEXEC_MAPPING_DIR      Directory to use for storing shared information (xdg-open mappings for example)
 DDEXEC_DEBUG            Print debug messages
@@ -202,10 +203,22 @@ func getStartupConfiguration(c *config.AppConfiguration) *config.StartupConfigur
 		c.StartupConfiguration = nil // null it out
 	}
 
+	if sc.UseDefaults {
+		sc.ShareX11 = sc.ShareX11 || env.IsNotSet("DO_NOT_SHARE_X11")
+		sc.ShareDBus = sc.ShareDBus || env.IsNotSet("DO_NOT_SHARE_DBUS")
+		sc.ShareShm = sc.ShareShm || env.IsNotSet("DO_NOT_SHARE_SHM")
+		sc.ShareSound = sc.ShareSound || env.IsNotSet("DO_NOT_SHARE_SOUND")
+		sc.ShareVideo = sc.ShareVideo || env.IsNotSet("DO_NOT_SHARE_VIDEO")
+		sc.ShareDockerSocket = sc.ShareDockerSocket || env.IsNotSet("DO_NOT_SHARE_DOCKER")
+		sc.ShareHomeDir = sc.ShareHomeDir || env.IsNotSet("DO_NOT_SHARE_HOME")
+		sc.ShareTools = sc.ShareTools || env.IsNotSet("DO_NOT_SHARE_TOOLS")
+	}
+
 	sc.DesktopMode = sc.DesktopMode || env.IsSet("DDEXEC_DESKTOP_MODE")
 	sc.KeepUser = sc.KeepUser || env.IsSet("KEEP_USER")
 	sc.UseHostX11 = sc.UseHostX11 || env.IsSet("USE_HOST_X11") || env.IsSet("USE_HOST")
 	sc.UseHostDBus = sc.UseHostDBus || env.IsSet("USE_HOST_DBUS") || env.IsSet("USE_HOST")
+	sc.FixHomeArgs = sc.FixHomeArgs || env.IsSet("FIX_HOME_ARGS")
 
 	if sc.PasswordFile == "" && env.IsSet("PASSWORD_FILE") {
 		sc.PasswordFile = os.Getenv("PASSWORD_FILE")

@@ -3,13 +3,14 @@ package exec
 import (
 	"fmt"
 	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/strslice"
 	"github.com/docker/go-connections/nat"
 	"github.com/mattn/go-shellwords"
 	"github.com/rycus86/ddexec/pkg/config"
 	"github.com/rycus86/ddexec/pkg/control"
 	"github.com/rycus86/ddexec/pkg/convert"
 	"github.com/rycus86/ddexec/pkg/debug"
+	"os"
+	"strings"
 )
 
 func newContainerConfig(c *config.AppConfiguration, sc *config.StartupConfiguration, environment []string) *container.Config {
@@ -18,6 +19,24 @@ func newContainerConfig(c *config.AppConfiguration, sc *config.StartupConfigurat
 		command = sc.Args
 	} else {
 		command = getCommand(c)
+	}
+
+	if sc.FixHomeArgs {
+		if debug.IsEnabled() {
+			fmt.Println("Original command arguments are:", command)
+		}
+
+		homeDir := os.Getenv("HOME")
+
+		for idx, part := range command {
+			if strings.Contains(part, homeDir) {
+				command[idx] = strings.ReplaceAll(part, homeDir, control.Source("${HOME}"))
+			}
+		}
+
+		if debug.IsEnabled() {
+			fmt.Println("Replaced command arguments are:", command)
+		}
 	}
 
 	var user string
@@ -52,10 +71,11 @@ func newContainerConfig(c *config.AppConfiguration, sc *config.StartupConfigurat
 		Image:        c.Image,
 		Env:          environment,
 		User:         user,
-		Cmd:          strslice.StrSlice(command),
+		Cmd:          command,
 		WorkingDir:   control.Target(c.WorkingDir, sc),
 		Labels:       labels,
-		Tty:          c.Tty,
+		Tty:          sc.StdInIsTerminal && c.Tty,
+		StdinOnce:    !sc.StdInIsTerminal,
 		OpenStdin:    c.StdinOpen,
 		AttachStdin:  c.StdinOpen,
 		AttachStdout: true,
