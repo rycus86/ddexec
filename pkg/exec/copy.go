@@ -40,7 +40,7 @@ func copyFiles(cli *client.Client, containerID string, sc *config.StartupConfigu
 		toCopy = append(toCopy, fileToCopy{Source: passwdFiles.Shadow, Target: "/etc/shadow"})
 	}
 
-	if sc.ShareTools {
+	if sc.IsSet(sc.ShareTools) {
 		toCopy = append(toCopy, fileToCopy{Source: getExecutable(), Target: "/usr/local/bin/ddexec"})
 	}
 

@@ -29,7 +29,7 @@ func prepareEnvironment(c *config.AppConfiguration, sc *config.StartupConfigurat
 		env = append(env, prepareUserEnvironment()...)
 	}
 
-	if sc.ShareDBus {
+	if sc.IsSet(sc.ShareDBus) {
 		env = append(env, prepareDBusEnvironment()...)
 	}
 

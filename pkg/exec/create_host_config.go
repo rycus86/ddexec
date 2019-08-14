@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
-	"github.com/docker/docker/api/types/strslice"
 	"github.com/docker/go-connections/nat"
 	"github.com/docker/go-units"
 	"github.com/pkg/errors"
@@ -41,13 +40,13 @@ func newHostConfig(
 			}
 		}
 
-		if sc.ShareDockerSocket && !hasDocker {
+		if sc.IsSet(sc.ShareDockerSocket) && !hasDocker {
 			additionalGroups = append(additionalGroups, "docker")
 		}
-		if sc.ShareSound && !hasAudio {
+		if sc.IsSet(sc.ShareSound) && !hasAudio {
 			additionalGroups = append(additionalGroups, "audio")
 		}
-		if sc.ShareVideo && !hasVideo {
+		if sc.IsSet(sc.ShareVideo) && !hasVideo {
 			additionalGroups = append(additionalGroups, "video")
 		}
 	}
@@ -66,21 +65,21 @@ func newHostConfig(
 			existingDevices[device] = true
 		}
 	}
-	if sc.ShareSound && deviceExists("/dev/snd") && !existingDevices["/dev/snd"] {
+	if sc.IsSet(sc.ShareSound) && deviceExists("/dev/snd") && !existingDevices["/dev/snd"] {
 		devices = append(devices, container.DeviceMapping{
 			PathOnHost:        "/dev/snd",
 			PathInContainer:   "/dev/snd",
 			CgroupPermissions: "rwm",
 		})
 	}
-	if sc.ShareVideo && deviceExists("/dev/dri") && !existingDevices["/dev/dri"] {
+	if sc.IsSet(sc.ShareVideo) && deviceExists("/dev/dri") && !existingDevices["/dev/dri"] {
 		devices = append(devices, container.DeviceMapping{
 			PathOnHost:        "/dev/dri",
 			PathInContainer:   "/dev/dri",
 			CgroupPermissions: "rwm",
 		})
 	}
-	if sc.ShareVideo && deviceExists("/dev/video0") && !existingDevices["/dev/video0"] {
+	if sc.IsSet(sc.ShareVideo) && deviceExists("/dev/video0") && !existingDevices["/dev/video0"] {
 		devices = append(devices, container.DeviceMapping{
 			PathOnHost:        "/dev/video0",
 			PathInContainer:   "/dev/video0",
@@ -133,8 +132,8 @@ func newHostConfig(
 		Mounts:         mounts,
 		GroupAdd:       additionalGroups,
 		SecurityOpt:    securityOpts,
-		CapAdd:         strslice.StrSlice(c.CapAdd),
-		CapDrop:        strslice.StrSlice(c.CapDrop),
+		CapAdd:         c.CapAdd,
+		CapDrop:        c.CapDrop,
 		NetworkMode:    container.NetworkMode(c.NetworkMode), // TODO can be container:<x> or service:<x>
 		IpcMode:        container.IpcMode(c.Ipc),
 		PidMode:        container.PidMode(c.Pid),

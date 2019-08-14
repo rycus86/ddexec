@@ -21,8 +21,10 @@ func LogTime(s string) {
 		return
 	}
 
-	tenthMills := time.Since(lastTimer).Nanoseconds() / int64(100*time.Microsecond)
+	if s != "" {
+		tenthMills := time.Since(lastTimer).Nanoseconds() / int64(100*time.Microsecond)
+		fmt.Printf("time :: %25s :: %4d.%1d ms\n", s, tenthMills/10, tenthMills%10)
+	}
 
-	fmt.Printf("time :: %25s :: %4d.%1d ms\n", s, tenthMills/10, tenthMills%10)
 	lastTimer = time.Now()
 }

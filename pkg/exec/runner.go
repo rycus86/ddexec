@@ -85,17 +85,27 @@ func Run(c *config.AppConfiguration, sc *config.StartupConfiguration) (chan int,
 
 		exitCode := waitForExit(cli, containerID)
 
+		debug.LogTime("waitForExit")
+
 		xdgopen.Clear(containerID)
+
+		debug.LogTime("xdgopen.Clear")
 
 		waitChan <- exitCode
 	}()
 
 	return waitChan, func() {
+		debug.LogTime("closerStart")
+
 		cli.ContainerStop(context.TODO(), containerID, nil)
+
+		debug.LogTime("containerStop")
 
 		// TODO maybe this is unnecessary
 		if selfId := getSelfContainerId(); selfId != "" {
 			restoreTtySize(cli, selfId)
+
+			debug.LogTime("restoryTtySize")
 		}
 	}
 }

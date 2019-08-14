@@ -35,6 +35,8 @@ func Clear(containerId string) {
 
 /*
 
+TODO register default handlers found in the container
+
 https://github.com/go-ini/ini
 
 /usr/share/applications/google-chrome.desktop:MimeType=text/html;text/xml;application/xhtml_xml;image/webp;x-scheme-handler/http;x-scheme-handler/https;x-scheme-handler/ftp;

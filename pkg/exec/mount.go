@@ -32,7 +32,7 @@ func prepareMounts(c *config.AppConfiguration, sc *config.StartupConfiguration) 
 		})
 	}
 
-	if sc.ShareDockerSocket {
+	if sc.IsSet(sc.ShareDockerSocket) {
 		mountList = append(mountList, mount.Mount{
 			Type:   mount.TypeBind,
 			Source: "/var/run/docker.sock",
@@ -46,7 +46,7 @@ func prepareMounts(c *config.AppConfiguration, sc *config.StartupConfiguration) 
 			Source: "/tmp/.X11-unix",
 			Target: "/tmp/.X11-unix",
 		})
-	} else if sc.ShareX11 {
+	} else if sc.IsSet(sc.ShareX11) {
 		mountList = append(mountList, mount.Mount{
 			Type:   mount.TypeVolume,
 			Source: "Xsocket",
@@ -54,7 +54,7 @@ func prepareMounts(c *config.AppConfiguration, sc *config.StartupConfiguration) 
 		})
 	}
 
-	if sc.ShareDBus {
+	if sc.IsSet(sc.ShareDBus) {
 		if sc.UseHostDBus {
 			mountList = append(mountList, mount.Mount{
 				Type:   mount.TypeBind,
@@ -80,7 +80,7 @@ func prepareMounts(c *config.AppConfiguration, sc *config.StartupConfiguration) 
 		}
 	}
 
-	if sc.ShareShm {
+	if sc.IsSet(sc.ShareShm) {
 		mountList = append(mountList, mount.Mount{
 			Type:   mount.TypeBind,
 			Source: "/dev/shm",
@@ -107,7 +107,7 @@ func prepareMounts(c *config.AppConfiguration, sc *config.StartupConfiguration) 
 
 	}
 
-	if sc.ShareHomeDir {
+	if sc.IsSet(sc.ShareHomeDir) {
 		if sc.KeepUser {
 			mountList = append(mountList, mount.Mount{
 				Type:   mount.TypeBind,
@@ -123,7 +123,7 @@ func prepareMounts(c *config.AppConfiguration, sc *config.StartupConfiguration) 
 		}
 	}
 
-	if sc.ShareTools {
+	if sc.IsSet(sc.ShareTools) {
 		mountList = append(mountList, mount.Mount{
 			Type:   mount.TypeBind,
 			Source: control.UnsafeEnsureSourceExists(control.Source("${HOME}/../bin")),

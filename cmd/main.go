@@ -106,6 +106,8 @@ func runMain() int {
 				fmt.Println("Ran closer")
 			}
 		}
+
+		debug.LogTime("runClosers")
 	}()
 
 	globalConfig := parse.ParseConfiguration(os.Args[1])
@@ -190,28 +192,21 @@ func getStartupConfiguration(c *config.AppConfiguration) *config.StartupConfigur
 	sc := c.StartupConfiguration
 	if sc == nil {
 		sc = &config.StartupConfiguration{
-			ShareX11:          env.IsNotSet("DO_NOT_SHARE_X11"),
-			ShareDBus:         env.IsNotSet("DO_NOT_SHARE_DBUS"),
-			ShareShm:          env.IsNotSet("DO_NOT_SHARE_SHM"),
-			ShareSound:        env.IsNotSet("DO_NOT_SHARE_SOUND"),
-			ShareVideo:        env.IsNotSet("DO_NOT_SHARE_VIDEO"),
-			ShareDockerSocket: env.IsNotSet("DO_NOT_SHARE_DOCKER"),
-			ShareHomeDir:      env.IsNotSet("DO_NOT_SHARE_HOME"),
-			ShareTools:        env.IsNotSet("DO_NOT_SHARE_TOOLS"),
+			UseDefaults: true,
 		}
 	} else {
 		c.StartupConfiguration = nil // null it out
 	}
 
 	if sc.UseDefaults {
-		sc.ShareX11 = sc.ShareX11 || env.IsNotSet("DO_NOT_SHARE_X11")
-		sc.ShareDBus = sc.ShareDBus || env.IsNotSet("DO_NOT_SHARE_DBUS")
-		sc.ShareShm = sc.ShareShm || env.IsNotSet("DO_NOT_SHARE_SHM")
-		sc.ShareSound = sc.ShareSound || env.IsNotSet("DO_NOT_SHARE_SOUND")
-		sc.ShareVideo = sc.ShareVideo || env.IsNotSet("DO_NOT_SHARE_VIDEO")
-		sc.ShareDockerSocket = sc.ShareDockerSocket || env.IsNotSet("DO_NOT_SHARE_DOCKER")
-		sc.ShareHomeDir = sc.ShareHomeDir || env.IsNotSet("DO_NOT_SHARE_HOME")
-		sc.ShareTools = sc.ShareTools || env.IsNotSet("DO_NOT_SHARE_TOOLS")
+		sc.ShareX11 = setIfUnset(sc.ShareX11, "DO_NOT_SHARE_X11")
+		sc.ShareDBus = setIfUnset(sc.ShareDBus, "DO_NOT_SHARE_DBUS")
+		sc.ShareShm = setIfUnset(sc.ShareShm, "DO_NOT_SHARE_SHM")
+		sc.ShareSound = setIfUnset(sc.ShareSound, "DO_NOT_SHARE_SOUND")
+		sc.ShareVideo = setIfUnset(sc.ShareVideo, "DO_NOT_SHARE_VIDEO")
+		sc.ShareDockerSocket = setIfUnset(sc.ShareDockerSocket, "DO_NOT_SHARE_DOCKER")
+		sc.ShareHomeDir = setIfUnset(sc.ShareHomeDir, "DO_NOT_SHARE_HOME")
+		sc.ShareTools = setIfUnset(sc.ShareTools, "DO_NOT_SHARE_TOOLS")
 	}
 
 	sc.DesktopMode = sc.DesktopMode || env.IsSet("DDEXEC_DESKTOP_MODE")
@@ -233,4 +228,13 @@ func getStartupConfiguration(c *config.AppConfiguration) *config.StartupConfigur
 	sc.Args = args
 
 	return sc
+}
+
+func setIfUnset(cfg *bool, key string) *bool {
+	if cfg != nil {
+		return cfg
+	} else {
+		value := env.IsNotSet(key)
+		return &value
+	}
 }
