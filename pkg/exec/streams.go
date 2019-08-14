@@ -66,7 +66,7 @@ func setupStreams(cli *client.Client, containerID string, c *config.AppConfigura
 
 	// handle output
 	go func() {
-		if c.Tty {
+		if sc.StdInIsTerminal && sc.StdOutIsTerminal {
 			io.Copy(os.Stdout, resp.Reader)
 		} else {
 			stdcopy.StdCopy(os.Stdout, os.Stderr, resp.Conn)
