@@ -23,7 +23,7 @@ func setupSignalHandlers(cli *client.Client, containerID string) {
 					fmt.Println("Received signal:", s)
 				}
 
-				cli.ContainerKill(context.TODO(), containerID, strconv.Itoa(int(s.(syscall.Signal))))
+				cli.ContainerKill(context.Background(), containerID, strconv.Itoa(int(s.(syscall.Signal))))
 			}
 		}
 	}()

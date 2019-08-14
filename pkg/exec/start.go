@@ -8,7 +8,7 @@ import (
 
 func startContainer(cli *client.Client, containerID string) {
 	if err := cli.ContainerStart(
-		context.TODO(), // TODO
+		context.Background(),
 		containerID,
 		types.ContainerStartOptions{},
 	); err != nil {

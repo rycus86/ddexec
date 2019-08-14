@@ -8,7 +8,7 @@ import (
 )
 
 func loadDaemonCapabilities(cli *client.Client, sc *config.StartupConfiguration) {
-	info, err := cli.Info(context.TODO()) // TODO
+	info, err := cli.Info(context.Background())
 	if err != nil {
 		panic(err)
 	}

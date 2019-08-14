@@ -11,7 +11,7 @@ func newClient() *client.Client {
 		panic(err)
 	}
 
-	cli.NegotiateAPIVersion(context.TODO()) // TODO
+	cli.NegotiateAPIVersion(context.Background())
 
 	return cli
 }

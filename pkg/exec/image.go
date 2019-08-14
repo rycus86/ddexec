@@ -30,7 +30,7 @@ func prepareAndProcessImage(cli *client.Client, c *config.AppConfiguration, sc *
 	)
 
 	if !shouldBuildOrPull {
-		image, _, err = cli.ImageInspectWithRaw(context.TODO(), c.Image)
+		image, _, err = cli.ImageInspectWithRaw(context.Background(), c.Image)
 		if err != nil {
 			if client.IsErrNotFound(err) {
 				shouldBuildOrPull = true
@@ -49,7 +49,7 @@ func prepareAndProcessImage(cli *client.Client, c *config.AppConfiguration, sc *
 			}
 
 			if reader, err := cli.ImagePull(
-				context.TODO(),
+				context.Background(),
 				c.Image, // TODO maybe allow having the image name empty and default to the filename
 				types.ImagePullOptions{}); err != nil {
 				panic(err)
@@ -72,7 +72,7 @@ func prepareAndProcessImage(cli *client.Client, c *config.AppConfiguration, sc *
 			}
 		}
 
-		if image, _, err = cli.ImageInspectWithRaw(context.TODO(), c.Image); err != nil {
+		if image, _, err = cli.ImageInspectWithRaw(context.Background(), c.Image); err != nil {
 			panic(err)
 		}
 	}
@@ -85,7 +85,7 @@ func prepareAndProcessImage(cli *client.Client, c *config.AppConfiguration, sc *
 		} else {
 			buildImage(cli, c)
 
-			if image, _, err = cli.ImageInspectWithRaw(context.TODO(), c.Image); err != nil {
+			if image, _, err = cli.ImageInspectWithRaw(context.Background(), c.Image); err != nil {
 				panic(err)
 			} else if image.Config.Labels["com.github.rycus86.ddexec.dockerfile.hash"] != hash {
 				panic(errors.New("the new image hash does not match the Dockerfile contents"))
@@ -113,7 +113,7 @@ func buildImage(cli *client.Client, c *config.AppConfiguration) {
 
 	bctx := prepareBuildContext(c)
 
-	if response, err := cli.ImageBuild(context.TODO(), bctx, types.ImageBuildOptions{
+	if response, err := cli.ImageBuild(context.Background(), bctx, types.ImageBuildOptions{
 		Labels: map[string]string{
 			"com.github.rycus86.ddexec.built_at":        time.Now().Format(time.RFC3339),
 			"com.github.rycus86.ddexec.dockerfile.hash": hashDockerfile(c.Dockerfile), // TODO const label key

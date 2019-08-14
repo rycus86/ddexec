@@ -97,7 +97,7 @@ func Run(c *config.AppConfiguration, sc *config.StartupConfiguration) (chan int,
 	return waitChan, func() {
 		debug.LogTime("closerStart")
 
-		cli.ContainerStop(context.TODO(), containerID, nil)
+		cli.ContainerStop(context.Background(), containerID, nil)
 
 		debug.LogTime("containerStop")
 

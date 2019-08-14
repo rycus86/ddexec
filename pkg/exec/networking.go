@@ -35,7 +35,7 @@ func prepareExtraHosts(cli *client.Client, sc *config.StartupConfiguration) []st
 }
 
 func findBridgeGatewayAddress(cli *client.Client) string {
-	network, err := cli.NetworkInspect(context.TODO(), "bridge", types.NetworkInspectOptions{
+	network, err := cli.NetworkInspect(context.Background(), "bridge", types.NetworkInspectOptions{
 		Scope: "local",
 	})
 	if err != nil {

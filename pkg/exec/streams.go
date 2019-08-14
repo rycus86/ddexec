@@ -33,7 +33,7 @@ func checkStreams(sc *config.StartupConfiguration) {
 func setupStreams(cli *client.Client, containerID string, c *config.AppConfiguration, sc *config.StartupConfiguration) func() {
 	var closerFunc func()
 
-	resp, err := cli.ContainerAttach(context.TODO(), containerID, types.ContainerAttachOptions{
+	resp, err := cli.ContainerAttach(context.Background(), containerID, types.ContainerAttachOptions{
 		Stdin:  true,
 		Stdout: true,
 		Stderr: true,
@@ -106,7 +106,7 @@ func resizeTty(cli *client.Client, containerID string) error {
 		fmt.Println("Resizing", containerID, "to", options)
 	}
 
-	return cli.ContainerResize(context.TODO(), containerID, options)
+	return cli.ContainerResize(context.Background(), containerID, options)
 }
 
 func monitorTtySize(cli *client.Client, containerID string, c *config.AppConfiguration, sc *config.StartupConfiguration) {

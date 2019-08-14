@@ -73,7 +73,7 @@ func copyToContainer(cli *client.Client, containerId string, dstPath string, fil
 	}
 
 	if err := cli.CopyToContainer(
-		context.TODO(), // TODO
+		context.Background(),
 		containerId,
 		dstPath,
 		tarFile,

@@ -20,7 +20,7 @@ func createContainer(
 	env []string, mounts []mount.Mount, extraHosts []string) string {
 
 	if created, err := cli.ContainerCreate(
-		context.TODO(), // TODO
+		context.Background(),
 		newContainerConfig(c, sc, env),
 		newHostConfig(c, sc, mounts, extraHosts),
 		&network.NetworkingConfig{},
@@ -42,7 +42,7 @@ func generateName(cli *client.Client, c *config.AppConfiguration) string {
 	if env.IsSet("DDEXEC_UNIQUE_NAMES") {
 		return name + "-" + strconv.Itoa(int(time.Now().Unix()))
 	} else {
-		containers, err := cli.ContainerList(context.TODO(), types.ContainerListOptions{
+		containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{
 			Filters: filters.NewArgs(filters.Arg("name", name)),
 			All:     true,
 		})
