@@ -29,6 +29,7 @@ func newHostConfig(
 		hasDocker := false
 		hasAudio := false
 		hasVideo := false
+		hasPlugDev := false
 
 		for _, gr := range additionalGroups {
 			if gr == "docker" {
@@ -37,6 +38,8 @@ func newHostConfig(
 				hasAudio = true
 			} else if gr == "video" {
 				hasVideo = true
+			} else if gr == "plugdev" {
+				hasPlugDev = true
 			}
 		}
 
@@ -48,6 +51,9 @@ func newHostConfig(
 		}
 		if sc.IsSet(sc.ShareVideo) && !hasVideo {
 			additionalGroups = append(additionalGroups, "video")
+		}
+		if sc.YubiKeySupport && !hasPlugDev {
+			additionalGroups = append(additionalGroups, "plugdev")
 		}
 	}
 
@@ -126,8 +132,10 @@ func newHostConfig(
 	}
 
 	return &container.HostConfig{
-		AutoRemove:     true,
-		Privileged:     c.Privileged, // TODO is this absolutely necessary for starting X ?
+		AutoRemove: true,
+		Privileged: c.Privileged || sc.YubiKeySupport,
+		// TODO is Privileged absolutely necessary for starting X ?
+		// TODO can we have YubiKey support without Privileged ?
 		ReadonlyRootfs: c.ReadOnly,
 		Mounts:         mounts,
 		GroupAdd:       additionalGroups,

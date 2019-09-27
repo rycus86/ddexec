@@ -15,12 +15,13 @@ type StartupConfiguration struct {
 	ShareHomeDir      *bool `yaml:"share_home"`
 	ShareTools        *bool `yaml:"share_tools"`
 
-	DesktopMode bool `yaml:"desktop_mode"`
-	KeepUser    bool `yaml:"keep_user"`
-	UseHostX11  bool `yaml:"use_host_x11"`
-	UseHostDBus bool `yaml:"use_host_dbus"`
-	FixHomeArgs bool `yaml:"fix_home_args"`
-	DaemonMode  bool `yaml:"daemon"`
+	DesktopMode    bool `yaml:"desktop_mode"`
+	KeepUser       bool `yaml:"keep_user"`
+	UseHostX11     bool `yaml:"use_host_x11"`
+	UseHostDBus    bool `yaml:"use_host_dbus"`
+	FixHomeArgs    bool `yaml:"fix_home_args"`
+	YubiKeySupport bool `yaml:"yubikey_support"`
+	DaemonMode     bool `yaml:"daemon"`
 
 	PasswordFile string `yaml:"password_file"`
 

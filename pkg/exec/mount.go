@@ -88,6 +88,19 @@ func prepareMounts(c *config.AppConfiguration, sc *config.StartupConfiguration) 
 		})
 	}
 
+	if sc.YubiKeySupport {
+		mountList = append(mountList, mount.Mount{
+			Type:   mount.TypeBind,
+			Source: "/sys/bus/usb",
+			Target: "/sys/bus/usb",
+		})
+		mountList = append(mountList, mount.Mount{
+			Type:   mount.TypeBind,
+			Source: "/sys/devices",
+			Target: "/sys/devices",
+		})
+	}
+
 	if sc.DesktopMode {
 		if udev, err := os.Stat("/run/udev"); err == nil && udev.IsDir() {
 			mountList = append(mountList, mount.Mount{

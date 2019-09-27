@@ -66,6 +66,7 @@ DO_NOT_SHARE_DOCKER     Do not share the Docker Engine API socket
 DO_NOT_SHARE_HOME       Do not share a common HOME folder with the application
 DO_NOT_SHARE_TOOLS      Do not share the ddexec tools with the application
 FIX_HOME_ARGS           Fix up the home path in command arguments (replace ${HOME} with ${DDEXEC_HOME})
+YUBIKEY_SUPPORT         Enable YubiKey support in the container (requires privileged mode)
 DDEXEC_UNIQUE_NAMES 	If you want unique container names with a timestamp instead of a counter
 DDEXEC_MAPPING_DIR      Directory to use for storing shared information (xdg-open mappings for example)
 DDEXEC_DEBUG            Print debug messages
@@ -214,6 +215,7 @@ func getStartupConfiguration(c *config.AppConfiguration) *config.StartupConfigur
 	sc.UseHostX11 = sc.UseHostX11 || env.IsSet("USE_HOST_X11") || env.IsSet("USE_HOST")
 	sc.UseHostDBus = sc.UseHostDBus || env.IsSet("USE_HOST_DBUS") || env.IsSet("USE_HOST")
 	sc.FixHomeArgs = sc.FixHomeArgs || env.IsSet("FIX_HOME_ARGS")
+	sc.YubiKeySupport = sc.YubiKeySupport || env.IsSet("YUBIKEY_SUPPORT")
 
 	if sc.PasswordFile == "" && env.IsSet("PASSWORD_FILE") {
 		sc.PasswordFile = os.Getenv("PASSWORD_FILE")
