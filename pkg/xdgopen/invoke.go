@@ -15,6 +15,23 @@ import (
 
 func Invoke(arg string) int {
 	if strings.Contains(arg, "://") {
+
+		// fix up some invalid characters in queries
+		if strings.Contains(arg, "?") {
+			parts := strings.Split(arg, "?")
+			uri, query := parts[0], parts[1]
+
+			queryParts := strings.Split(query, "&")
+			for idx, part := range queryParts {
+				parts := strings.SplitN(part, "=", 2)
+				key, value := parts[0], parts[1]
+
+				queryParts[idx] = url.QueryEscape(key) + "=" + url.QueryEscape(value)
+			}
+
+			arg = uri + "?" + strings.Join(queryParts, "&")
+		}
+
 		parsed, err := url.Parse(arg)
 		if err != nil {
 			fmt.Println("Invalid URL:", arg, "-", err)
