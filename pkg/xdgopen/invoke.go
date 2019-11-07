@@ -23,10 +23,14 @@ func Invoke(arg string) int {
 
 			queryParts := strings.Split(query, "&")
 			for idx, part := range queryParts {
-				parts := strings.SplitN(part, "=", 2)
-				key, value := parts[0], parts[1]
+				if strings.Contains(part, "=") {
+					parts := strings.SplitN(part, "=", 2)
+					key, value := parts[0], parts[1]
 
-				queryParts[idx] = url.QueryEscape(key) + "=" + url.QueryEscape(value)
+					queryParts[idx] = url.QueryEscape(key) + "=" + url.QueryEscape(value)
+				} else {
+					queryParts[idx] = url.QueryEscape(part)
+				}
 			}
 
 			arg = uri + "?" + strings.Join(queryParts, "&")
