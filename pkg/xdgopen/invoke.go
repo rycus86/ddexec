@@ -15,32 +15,8 @@ import (
 
 func Invoke(arg string) int {
 	if strings.Contains(arg, "://") {
-
+		// try parsing the URL to get the scheme out of it
 		parsed, err := url.Parse(arg)
-		if err != nil {
-			// fix up some invalid characters in queries
-			if strings.Contains(arg, "?") {
-				parts := strings.Split(arg, "?")
-				uri, query := parts[0], parts[1]
-
-				queryParts := strings.Split(query, "&")
-				for idx, part := range queryParts {
-					if strings.Contains(part, "=") {
-						parts := strings.SplitN(part, "=", 2)
-						key, value := parts[0], parts[1]
-
-						queryParts[idx] = url.QueryEscape(key) + "=" + url.QueryEscape(value)
-					} else {
-						queryParts[idx] = url.QueryEscape(part)
-					}
-				}
-
-				arg = uri + "?" + strings.Join(queryParts, "&")
-			}
-		}
-
-		// try parsing it (potentially with the fixed URL)
-		parsed, err = url.Parse(arg)
 		if err != nil {
 			fmt.Println("Invalid URL:", arg, "-", err)
 			return 1 // Error in command line syntax.
